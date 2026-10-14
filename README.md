@@ -108,3 +108,7 @@ interpreter match.
   and their tests were confirmed to fail on the old code and pass on the fix.
 - **Tests that can fail:** tests were checked against deliberately broken code to confirm
   they catch the bugs they are meant to catch.
+
+## License
+
+[MIT](LICENSE)
