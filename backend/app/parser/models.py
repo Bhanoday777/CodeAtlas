@@ -98,9 +98,12 @@ class ScanResult:
         """Deduplicated (importer, imported) pairs between local modules.
 
         Edge convention: (A, B) means module A imports module B.
+        Self-imports (e.g. `from . import name` inside a package's own
+        __init__.py) stay in `imports` but are not edges: a module depending
+        on itself adds nothing to impact analysis.
         """
         return {
             (imp.source, imp.target)
             for imp in self.imports
-            if imp.kind is ImportKind.LOCAL and imp.target is not None
+            if imp.kind is ImportKind.LOCAL and imp.target is not None and imp.target != imp.source
         }

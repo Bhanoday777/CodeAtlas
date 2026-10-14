@@ -13,8 +13,16 @@ from pathlib import Path, PurePosixPath
 from app.parser.models import ModuleInfo, ScanError
 
 # Directories that never contain the project's own source code.
-# Dot-directories (.git, .venv, .tox, ...) are skipped separately.
-SKIPPED_DIRS = frozenset({"__pycache__", "node_modules", "venv", "env", "site-packages"})
+# Dot-directories (.git, .venv, .tox, ...) are skipped separately, and virtual
+# environments are detected by their pyvenv.cfg marker rather than by name,
+# so a real package called `env` or `venv` is not silently dropped.
+SKIPPED_DIRS = frozenset({"__pycache__", "node_modules", "site-packages"})
+
+
+def is_skipped_dir(parent: str, name: str) -> bool:
+    if name.startswith(".") or name in SKIPPED_DIRS:
+        return True
+    return os.path.isfile(os.path.join(parent, name, "pyvenv.cfg"))
 
 
 def path_to_module_id(relative_path: PurePosixPath) -> tuple[str, bool]:
@@ -42,9 +50,7 @@ def discover_modules(root: Path) -> tuple[dict[str, ModuleInfo], list[ScanError]
     for dirpath, dirnames, filenames in os.walk(root):
         # Prune in place so os.walk does not descend into skipped directories.
         # Sorting makes scan order (and therefore output) deterministic.
-        dirnames[:] = sorted(
-            d for d in dirnames if not d.startswith(".") and d not in SKIPPED_DIRS
-        )
+        dirnames[:] = sorted(d for d in dirnames if not is_skipped_dir(dirpath, d))
         for filename in sorted(filenames):
             if not filename.endswith(".py"):
                 continue

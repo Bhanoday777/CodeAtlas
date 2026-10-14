@@ -90,6 +90,34 @@ def test_edge_direction_is_importer_to_imported(scan):
     assert ("shop.utils.helpers", "shop.models.order") not in edges
 
 
+def test_direct_dependencies_of_a_module(scan):
+    # What shop.services.orders imports (outgoing edges).
+    imported = {b for a, b in scan.local_edges() if a == "shop.services.orders"}
+    assert imported == {"shop.services.pricing", "shop.models.order"}
+
+
+def test_direct_importers_of_a_module(scan):
+    # Who imports shop.utils.helpers (incoming edges): the reverse view that
+    # impact analysis will traverse.
+    importers = {a for a, b in scan.local_edges() if b == "shop.utils.helpers"}
+    assert importers == {"shop.main", "shop.services.pricing", "shop.models.order", "shop.dupes"}
+
+
+def test_leaf_and_unimported_modules(scan):
+    edges = scan.local_edges()
+    assert not any(a == "shop.utils.helpers" for a, _ in edges)  # imports nothing local
+    assert not any(b == "manage" for _, b in edges)              # nothing imports it
+
+
+def test_fixture_cycle_is_present_in_both_directions(scan):
+    edges = scan.local_edges()
+    assert {("shop.cycle_a", "shop.cycle_b"), ("shop.cycle_b", "shop.cycle_a")} <= edges
+
+
+def test_no_self_loops(scan):
+    assert all(a != b for a, b in scan.local_edges())
+
+
 def test_external_imports_match_exactly(scan):
     assert by_kind(scan, ImportKind.EXTERNAL) == EXPECTED_EXTERNAL
 

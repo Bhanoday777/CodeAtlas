@@ -35,6 +35,13 @@ npm install
 npm run build
 ```
 
+To print a scan report for any Python repository (read-only; nothing is executed):
+
+```bash
+cd backend
+.venv/Scripts/python -m app.parser ../fixtures/sample_python_project
+```
+
 Always invoke Python through the venv (`.venv/Scripts/python -m ...`) so packages and
 interpreter match.
 
@@ -55,15 +62,49 @@ interpreter match.
 - A local package with the same top-level name as an installed one is treated as local.
 - Importing `a.b.c` creates an edge only to `a.b.c`, not to the parent packages `a` and `a.b`
   (whose `__init__.py` Python also executes).
+- `import nspkg` of a namespace package (a directory without `__init__.py`) is reported as
+  unresolved, although Python accepts it. Imports of its submodules resolve correctly.
+- A package split across several folders (e.g. langgraph's `libs/*/langgraph/...`) only
+  resolves the parts inside the scanned root; the rest are reported as unresolved.
+- Imports under `if TYPE_CHECKING:` are included as dependencies.
+- Self-imports are kept as local imports but are not graph edges.
+- Virtual environments are skipped when they contain `pyvenv.cfg` (or are dot-directories);
+  a virtualenv without that marker would be scanned.
 
 ## Progress
 
 | Day | Scope | Status |
 |-----|-------|--------|
-| 1 | Project setup, parser, fixture, parser tests | ✅ Done: 62 tests passing |
+| 1 | Project setup, parser, fixture, parser tests | ✅ Done: 137 passing, 1 expected failure (known limitation) |
 | 2 | Graph engine, BFS impact analysis | Not started |
 | 3 | FastAPI endpoints | Not started |
 | 4 | Frontend graph + search | Not started |
 | 5 | Impact workflow UI | Not started |
 | 6 | Integration testing | Not started |
 | 7 | Docs, delivery | Not started |
+
+## Development approach
+
+**Decisions**
+- **Scope:** a strict MVP (Python only, static analysis, no database, no LLM features, one
+  configured demo repository), planned as a seven-day schedule.
+- **Architecture:** separate stages for discovery, AST extraction, import resolution, graph
+  traversal, API, and UI, so each can be tested and explained on its own.
+- **Trade-offs:** which limitations to accept and document (dynamic imports, namespace
+  packages, `TYPE_CHECKING` imports) rather than over-engineer.
+- **Process:** each phase was proposed as a plan, reviewed and approved by me before
+  implementation, and verified with tests before moving on.
+
+**How correctness was verified**
+- **Hand-written expected results:** the fixture repository's expected modules, edges,
+  external/unresolved imports, and errors were written before running the parser, and the
+  tests compare them with exact set equality, so both missing and extra edges fail.
+- **Independent checker:** a separate reference resolver, sharing no code with the parser and
+  using Python's own `importlib.util.resolve_name`, produced identical edges on the fixture,
+  [click](https://github.com/pallets/click) (61 edges), and langgraph (428 edges). The same
+  `importlib` cross-check is part of the test suite (`test_absolute_base_agrees_with_importlib`).
+- **Regression tests:** a review against real packages found two bugs (a real package named
+  `env`/`venv` was silently skipped; self-imports produced self-loop edges). Both were fixed,
+  and their tests were confirmed to fail on the old code and pass on the fix.
+- **Tests that can fail:** tests were checked against deliberately broken code to confirm
+  they catch the bugs they are meant to catch.

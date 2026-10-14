@@ -8,6 +8,8 @@ Index:
     top.py                 -> top          (top-level module, not in a package)
 """
 
+import importlib.util
+
 import pytest
 
 from app.parser.models import ImportKind, ImportRecord, ModuleInfo
@@ -119,6 +121,23 @@ def test_missing_module_under_local_root_is_unresolved(module, name):
 def test_absolute_base(importer, module, level, expected):
     record = ImportRecord(module=module, name="n", level=level, lineno=1)
     assert absolute_base(record, MODULES[importer]) == expected
+
+
+@pytest.mark.parametrize("importer", sorted(MODULES))
+@pytest.mark.parametrize("level", [1, 2, 3, 4])
+@pytest.mark.parametrize("module", [None, "x", "x.y"])
+def test_absolute_base_agrees_with_importlib(importer, level, module):
+    # Independent oracle: the standard library's own relative-name resolution.
+    info = MODULES[importer]
+    package = info.module_id if info.is_package else info.module_id.rpartition(".")[0]
+    relative_name = "." * level + (module or "")
+    try:
+        expected = importlib.util.resolve_name(relative_name, package)
+    except ImportError:  # beyond top-level package, or no package at all
+        expected = None
+
+    record = ImportRecord(module=module, name="n", level=level, lineno=1)
+    assert absolute_base(record, info) == expected
 
 
 def test_resolved_import_records_source_raw_and_line():
