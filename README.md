@@ -6,8 +6,8 @@ CodeAtlas statically parses a Python repository (it never executes the code), bu
 module dependency graph from local imports, and estimates which modules may be affected
 when a given module changes.
 
-> **Status: in development (Day 2 of 7).** The parser and the graph / impact engine are
-> implemented; there is no API or UI yet.
+> **Status: in development (Day 3 of 7).** The parser, the graph / impact engine, and the
+> HTTP API are implemented; there is no UI yet.
 
 ## Repository layout
 
@@ -15,6 +15,8 @@ when a given module changes.
 backend/    FastAPI service (Day 3) + static import parser (Day 1) + graph engine (Day 2)
   app/parser/   discovery -> extraction -> resolution
   app/graph/    dependency graph, BFS change-impact analysis
+  app/api/      HTTP routes, response schemas, repository config
+  app/main.py   FastAPI app (scans the configured repository once at startup)
   tests/        pytest suites
 frontend/   React + TypeScript + Vite (scaffold only so far)
 fixtures/   sample_python_project: small repo with hand-verified import relationships
@@ -52,6 +54,15 @@ cd backend
 ```
 
 Leave out the module ID to list every module with its import counts.
+
+To run the API (http://127.0.0.1:8000, interactive docs at `/docs`):
+
+```bash
+cd backend
+.venv/Scripts/python -m uvicorn app.main:app
+# Analyze another repository instead of the fixture:
+CODEATLAS_REPO=/path/to/repo .venv/Scripts/python -m uvicorn app.main:app   # PowerShell: $env:CODEATLAS_REPO="..."
+```
 
 Always invoke Python through the venv (`.venv/Scripts/python -m ...`) so packages and
 interpreter match.
@@ -97,6 +108,49 @@ Memory: O(V + E) for the two adjacency lists, plus O(V) per query for the BFS qu
 
 Impact results are an estimate from import statements, not a prediction of runtime behavior.
 
+## API
+
+The repository in `CODEATLAS_REPO` (default: `fixtures/sample_python_project`) is resolved to an
+absolute path and scanned **once at startup**; results stay in memory. If `CODEATLAS_REPO` is set
+to something that is not a directory, the server refuses to start; it never falls back to the
+fixture. CORS allows only the Vite dev server, `http://localhost:5173`.
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/health` | `status`, repository folder name, module and edge counts |
+| `GET /api/graph` | `nodes` (id, path, is_package, has_scan_error, dependency/dependent counts), `edges` (`source` imports `target`), `summary` counts |
+| `GET /api/modules/{id}` | path, direct dependencies and dependents, external and unresolved imports |
+| `GET /api/impact/{id}` | `affected` (id, distance, explanation path), `direct`, `transitive`, `diagnostics` |
+| `GET /api/scan/issues` | scan errors, unresolved imports, self-imports, `diagnostics`, `limitations` |
+
+- **Module IDs in URLs:** dotted names (`/api/impact/shop.models.order`). Clients should apply
+  `encodeURIComponent` to the ID; plain ASCII IDs are unchanged by it and non-ASCII IDs round-trip.
+- **Unknown IDs** return `404` with `{"detail": "Unknown module: 'x'"}`.
+- All lists are sorted, so the same scan always gives the same JSON.
+- **Diagnostics** only report what the scan recorded: files that failed to parse and unresolved
+  imports (both can hide dependents, so they also appear on impact reports), and self-imports.
+  An empty issue list does not mean the analysis is complete.
+- The impact endpoint only reshapes `DependencyGraph.impact()`; there is no second algorithm.
+
+Example, `GET /api/impact/shop.services.pricing` on the fixture (diagnostics shortened):
+
+```json
+{
+  "changed_module": "shop.services.pricing",
+  "affected": [
+    {"id": "shop.lazy", "distance": 1, "path": ["shop.lazy", "shop.services.pricing"]},
+    {"id": "shop.services.orders", "distance": 1, "path": ["shop.services.orders", "shop.services.pricing"]},
+    {"id": "shop.main", "distance": 2, "path": ["shop.main", "shop.services.orders", "shop.services.pricing"]},
+    {"id": "shop.services", "distance": 2, "path": ["shop.services", "shop.services.orders", "shop.services.pricing"]},
+    {"id": "manage", "distance": 3, "path": ["manage", "shop.main", "shop.services.orders", "shop.services.pricing"]}
+  ],
+  "direct": ["shop.lazy", "shop.services.orders"],
+  "transitive": ["shop.main", "shop.services", "manage"],
+  "diagnostics": [{"code": "scan_errors", "message": "1 file(s) could not be parsed ..."},
+                  {"code": "unresolved_imports", "message": "3 import(s) look local ..."}]
+}
+```
+
 ## Known limitations (static analysis)
 
 - Dynamic imports (`importlib.import_module`, `__import__`, string-built names) are not detected.
@@ -114,6 +168,7 @@ Impact results are an estimate from import statements, not a prediction of runti
 - Self-imports are kept as local imports but are not graph edges.
 - Impact inherits every parser gap: an import the parser misses (dynamic, unresolved, parent
   package) is a dependency the impact report also misses.
+- The API reports the repository by its folder name only; scanning Click's `src/` folder shows as `src`.
 - Virtual environments are skipped when they contain `pyvenv.cfg` (or are dot-directories);
   a virtualenv without that marker would be scanned.
 
@@ -123,7 +178,7 @@ Impact results are an estimate from import statements, not a prediction of runti
 |-----|-------|--------|
 | 1 | Project setup, parser, fixture, parser tests | ✅ Done: 137 passing, 1 expected failure (known limitation) |
 | 2 | Graph engine, BFS impact analysis | ✅ Done: 206 passing, 1 expected failure (same known limitation) |
-| 3 | FastAPI endpoints | Not started |
+| 3 | FastAPI endpoints | ✅ Done: 236 passing, 1 expected failure (same known limitation) |
 | 4 | Frontend graph + search | Not started |
 | 5 | Impact workflow UI | Not started |
 | 6 | Integration testing | Not started |
