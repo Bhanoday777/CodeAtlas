@@ -6,8 +6,8 @@ CodeAtlas statically parses a Python repository (it never executes the code), bu
 module dependency graph from local imports, and estimates which modules may be affected
 when a given module changes.
 
-> **Status: in development (Day 3 of 7).** The parser, the graph / impact engine, and the
-> HTTP API are implemented; there is no UI yet.
+> **Status: in development (Day 4 of 7).** The parser, the graph / impact engine, the HTTP
+> API, and a graph explorer UI are implemented. The change-impact UI is next (Day 5).
 
 ## Repository layout
 
@@ -18,7 +18,11 @@ backend/    FastAPI service (Day 3) + static import parser (Day 1) + graph engin
   app/api/      HTTP routes, response schemas, repository config
   app/main.py   FastAPI app (scans the configured repository once at startup)
   tests/        pytest suites
-frontend/   React + TypeScript + Vite (scaffold only so far)
+frontend/   React + TypeScript + Vite UI (Day 4): graph explorer over the API
+  src/services/   API client (the only code that calls the backend)
+  src/hooks/      request state (loading / error / retry) for each endpoint
+  src/lib/        pure helpers: API graph -> Cytoscape elements, module search
+  src/components/ layout, graph (Cytoscape), module explorer and details, diagnostics
 fixtures/   sample_python_project: small repo with hand-verified import relationships
 ```
 
@@ -36,6 +40,8 @@ py -3.13 -m venv .venv            # Windows; use python3.13 on macOS/Linux
 # Frontend
 cd frontend
 npm install
+npm test          # unit tests (Vitest)
+npm run lint
 npm run build
 ```
 
@@ -63,6 +69,17 @@ cd backend
 # Analyze another repository instead of the fixture:
 CODEATLAS_REPO=/path/to/repo .venv/Scripts/python -m uvicorn app.main:app   # PowerShell: $env:CODEATLAS_REPO="..."
 ```
+
+To run the UI, start the API as above, then in another terminal:
+
+```bash
+cd frontend
+npm run dev       # http://localhost:5173
+```
+
+Open **http://localhost:5173**, not `127.0.0.1:5173`: the API's CORS setting only allows the
+`localhost` origin. The UI calls the API at `VITE_API_BASE_URL`, default `http://127.0.0.1:8000`;
+to change it, copy `frontend/.env.example` to `frontend/.env.local` and edit it.
 
 Always invoke Python through the venv (`.venv/Scripts/python -m ...`) so packages and
 interpreter match.
@@ -151,6 +168,33 @@ Example, `GET /api/impact/shop.services.pricing` on the fixture (diagnostics sho
 }
 ```
 
+## Graph explorer (frontend)
+
+React 19 + TypeScript, Tailwind CSS v4, Cytoscape.js with the `cytoscape-dagre` layered layout.
+
+- **Graph:** every module from `GET /api/graph` is a node and every edge an arrow, in the API's
+  direction (**A → B means A imports B**). The layout places importers above the modules they import.
+  Packages have dashed borders; files that failed to parse have red borders. Labels show the last part
+  of the module ID; hovering shows the full ID and path.
+- **Controls:** zoom in/out, fit to view, and reset (re-runs the layout, which undoes dragged nodes, and
+  clears the selection). Mouse wheel and drag pan and zoom as well.
+- **Selection:** clicking a node or a module in the list selects it in both. The selected module's direct
+  imports (blue) and direct importers (teal) are highlighted; everything else is dimmed. Only direct
+  neighbors are shown: transitive impact is Day 5.
+- **Module details:** from `GET /api/modules/{id}`: path, imports, imported by, external and unresolved
+  imports with line numbers. Module links in the panel select that module.
+- **Search:** filters by module ID or file path as you type (case-insensitive, surrounding spaces ignored).
+- **Summary and diagnostics:** the six counts from the graph response's `summary`, unchanged. The
+  Diagnostics drawer shows `GET /api/scan/issues`: scan errors, unresolved imports, self-imports, and the
+  analysis limitations, in separate sections.
+- **Failure states:** loading, backend unreachable, HTTP errors (including the API's 404 message), and
+  responses that do not match the contract each get their own message, with Retry where it helps. The
+  client checks response shapes and never turns a failure into an empty graph.
+
+Frontend tests (`npm test`) cover the API client (success, network failure, HTTP errors, malformed
+bodies, ID encoding), the graph conversion (edge direction, cycles, self-loops, duplicates, empty graph),
+and search. The UI itself was checked by hand in Chrome against the fixture repository.
+
 ## Known limitations (static analysis)
 
 - Dynamic imports (`importlib.import_module`, `__import__`, string-built names) are not detected.
@@ -179,7 +223,7 @@ Example, `GET /api/impact/shop.services.pricing` on the fixture (diagnostics sho
 | 1 | Project setup, parser, fixture, parser tests | ✅ Done: 137 passing, 1 expected failure (known limitation) |
 | 2 | Graph engine, BFS impact analysis | ✅ Done: 206 passing, 1 expected failure (same known limitation) |
 | 3 | FastAPI endpoints | ✅ Done: 236 passing, 1 expected failure (same known limitation) |
-| 4 | Frontend graph + search | Not started |
+| 4 | Frontend graph + search | ✅ Done: 28 frontend tests passing; backend unchanged (236 passing, 1 expected failure) |
 | 5 | Impact workflow UI | Not started |
 | 6 | Integration testing | Not started |
 | 7 | Docs, delivery | Not started |
