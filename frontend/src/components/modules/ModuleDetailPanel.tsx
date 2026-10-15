@@ -2,25 +2,24 @@ import type { ReactNode } from 'react'
 
 import { useModuleDetail } from '../../hooks/useCodeAtlas'
 import { errorTitle } from '../../lib/errorText'
+import { shortLabel } from '../../lib/graphElements'
+import type { PackageModel } from '../../lib/packages'
 import type { ImportEntry, ModuleDetail } from '../../types/api'
-import { AlertIcon, ArrowLeftIcon, ArrowRightIcon } from '../common/icons'
+import { AlertIcon, ArrowLeftIcon, ArrowRightIcon, FileIcon, GraphIcon } from '../common/icons'
 import { Spinner, StatusMessage } from '../common/StatusMessage'
 
 interface ModuleDetailPanelProps {
   selectedId: string | null
+  packages: PackageModel
   onSelect: (moduleId: string) => void
 }
 
-export function ModuleDetailPanel({ selectedId, onSelect }: ModuleDetailPanelProps) {
+export function ModuleDetailPanel({ selectedId, packages, onSelect }: ModuleDetailPanelProps) {
   const detail = useModuleDetail(selectedId)
 
   return (
     <section aria-label="Module details" className="flex h-full min-h-0 flex-col">
-      {detail.status === 'idle' && (
-        <StatusMessage title="No module selected" compact>
-          Select a module in the graph or the module list to see what it imports and what imports it.
-        </StatusMessage>
-      )}
+      {detail.status === 'idle' && <EmptyDetail />}
       {detail.status === 'loading' && (
         <div className="flex h-full items-center justify-center py-8">
           <Spinner label={`Loading ${selectedId}…`} />
@@ -36,26 +35,74 @@ export function ModuleDetailPanel({ selectedId, onSelect }: ModuleDetailPanelPro
           {detail.error.message}
         </StatusMessage>
       )}
-      {detail.status === 'success' && <ModuleDetailBody module={detail.data} onSelect={onSelect} />}
+      {detail.status === 'success' && (
+        // Keyed so the fade-in replays when the selection changes.
+        <ModuleDetailBody key={detail.data.id} module={detail.data} packages={packages} onSelect={onSelect} />
+      )}
     </section>
   )
 }
 
-function ModuleDetailBody({ module, onSelect }: { module: ModuleDetail; onSelect: (moduleId: string) => void }) {
+function EmptyDetail() {
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      <header className="border-b border-line px-4 py-3">
-        <p className="text-[11px] font-medium tracking-wide text-faint uppercase">
-          {module.is_package ? 'Package' : 'Module'}
+    <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+      <div className="grid size-11 place-items-center rounded-xl border border-line-strong bg-raised text-faint">
+        <GraphIcon width={20} height={20} />
+      </div>
+      <p className="text-[14px] font-medium">No module selected</p>
+      <p className="max-w-60 text-[12.5px] text-muted">
+        Click a node in the graph, pick one from the list, or press{' '}
+        <kbd className="rounded border border-line-strong bg-raised px-1 text-[11px] text-ink">Ctrl K</kbd> to jump to a module.
+      </p>
+    </div>
+  )
+}
+
+interface BodyProps {
+  module: ModuleDetail
+  packages: PackageModel
+  onSelect: (moduleId: string) => void
+}
+
+function ModuleDetailBody({ module, packages, onSelect }: BodyProps) {
+  const pkg = packages.clusterOf.get(module.id) ?? null
+
+  return (
+    <div className="min-h-0 flex-1 animate-fade-in overflow-y-auto">
+      <header className="border-b border-line px-4 pt-4 pb-3.5">
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-flex max-w-full items-center gap-1.5 rounded-md border px-1.5 py-0.5 font-mono text-[11px]"
+            style={{ borderColor: `${packages.colorOf(module.id)}55`, color: packages.colorOf(module.id) }}
+          >
+            <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
+            <span className="truncate">{pkg ?? 'top level'}</span>
+          </span>
+          <span className="text-[11px] text-faint">{module.is_package ? 'Package' : 'Module'}</span>
+        </div>
+        <h2 className="mt-2 text-[18px] leading-tight font-semibold tracking-tight break-all">{shortLabel(module.id)}</h2>
+        <p className="mt-0.5 font-mono text-[12px] break-all text-muted">{module.id}</p>
+        <p className="mt-2 flex items-center gap-1.5 font-mono text-[11.5px] break-all text-faint">
+          <FileIcon className="shrink-0" width={13} height={13} />
+          {module.path}
         </p>
-        <h2 className="mt-0.5 font-mono text-[14px] break-all text-ink">{module.id}</h2>
-        <p className="mt-1 font-mono text-[12px] break-all text-muted">{module.path}</p>
         {module.has_scan_error && (
-          <p className="mt-3 flex gap-2 rounded-md border border-danger/30 bg-danger/10 px-2.5 py-2 text-[12px] text-danger">
+          <p className="mt-3 flex gap-2 rounded-lg border border-danger/30 bg-danger/10 px-2.5 py-2 text-[12px] text-danger">
             <AlertIcon className="mt-px shrink-0" width={14} height={14} />
             <span>This file could not be parsed, so its imports are missing from the graph.</span>
           </p>
         )}
+
+        <dl className="mt-3.5 grid grid-cols-2 gap-1.5">
+          <Stat label="Imports" value={module.dependencies.length} className="text-accent" />
+          <Stat label="Imported by" value={module.dependents.length} className="text-incoming" />
+          <Stat label="External" value={module.external_imports.length} className="text-ink" />
+          <Stat
+            label="Unresolved"
+            value={module.unresolved_imports.length}
+            className={module.unresolved_imports.length > 0 ? 'text-warn' : 'text-ink'}
+          />
+        </dl>
       </header>
 
       <Section
@@ -65,7 +112,7 @@ function ModuleDetailBody({ module, onSelect }: { module: ModuleDetail; onSelect
         icon={<ArrowRightIcon className="text-accent" width={14} height={14} />}
         empty="Imports no local modules."
       >
-        <ModuleLinks ids={module.dependencies} onSelect={onSelect} />
+        <ModuleLinks ids={module.dependencies} packages={packages} onSelect={onSelect} />
       </Section>
 
       <Section
@@ -75,15 +122,10 @@ function ModuleDetailBody({ module, onSelect }: { module: ModuleDetail; onSelect
         icon={<ArrowLeftIcon className="text-incoming" width={14} height={14} />}
         empty="No local module imports this one."
       >
-        <ModuleLinks ids={module.dependents} onSelect={onSelect} />
+        <ModuleLinks ids={module.dependents} packages={packages} onSelect={onSelect} />
       </Section>
 
-      <Section
-        title="External imports"
-        hint="Standard library and third-party imports; not graph nodes"
-        count={module.external_imports.length}
-        empty="None."
-      >
+      <Section title="External imports" hint="Standard library and third-party; not graph nodes" count={module.external_imports.length} empty="None.">
         <ImportLines entries={module.external_imports} />
       </Section>
 
@@ -94,8 +136,17 @@ function ModuleDetailBody({ module, onSelect }: { module: ModuleDetail; onSelect
         tone={module.unresolved_imports.length > 0 ? 'warn' : undefined}
         empty="None."
       >
-        <ImportLines entries={module.unresolved_imports} />
+        <ImportLines entries={module.unresolved_imports} tone="warn" />
       </Section>
+    </div>
+  )
+}
+
+function Stat({ label, value, className }: { label: string; value: number; className: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2 rounded-lg border border-line bg-raised/60 px-2.5 py-1.5">
+      <dt className="truncate text-[11.5px] text-muted">{label}</dt>
+      <dd className={`font-mono text-[16px] leading-tight font-semibold tabular-nums ${className}`}>{value}</dd>
     </div>
   )
 }
@@ -113,20 +164,20 @@ interface SectionProps {
 function Section({ title, hint, count, empty, icon, tone, children }: SectionProps) {
   return (
     <div className="border-b border-line px-4 py-3 last:border-b-0">
-      <h3 className="flex items-center gap-1.5 text-[12px] font-semibold text-ink" title={hint}>
+      <h3 className="flex items-center gap-1.5 text-[12px] font-semibold text-ink">
         {icon}
         {title}
-        <span className={`ml-auto font-mono text-[11px] font-normal ${tone === 'warn' ? 'text-warn' : 'text-faint'}`}>
+        <span className={`ml-auto rounded-md bg-hover px-1.5 font-mono text-[10.5px] font-normal ${tone === 'warn' ? 'text-warn' : 'text-muted'}`}>
           {count}
         </span>
       </h3>
       <p className="mt-0.5 text-[11px] text-faint">{hint}</p>
-      <div className="mt-2">{count === 0 ? <p className="text-[12px] text-faint">{empty}</p> : children}</div>
+      <div className="mt-2">{count === 0 ? <p className="text-[12px] text-faint italic">{empty}</p> : children}</div>
     </div>
   )
 }
 
-function ModuleLinks({ ids, onSelect }: { ids: string[]; onSelect: (moduleId: string) => void }) {
+function ModuleLinks({ ids, packages, onSelect }: { ids: string[]; packages: PackageModel; onSelect: (moduleId: string) => void }) {
   return (
     <ul className="-mx-1.5 space-y-px">
       {ids.map((id) => (
@@ -134,9 +185,12 @@ function ModuleLinks({ ids, onSelect }: { ids: string[]; onSelect: (moduleId: st
           <button
             type="button"
             onClick={() => onSelect(id)}
-            className="w-full truncate rounded px-1.5 py-1 text-left font-mono text-[12px] text-accent-ink transition-colors hover:bg-hover"
+            title={`Select ${id}`}
+            className="group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-hover"
           >
-            {id}
+            <span className="size-1.5 shrink-0 rounded-full" style={{ background: packages.colorOf(id) }} aria-hidden="true" />
+            <span className="text-[12.5px] text-ink group-hover:text-accent-ink">{shortLabel(id)}</span>
+            <span className="min-w-0 truncate font-mono text-[11px] text-faint">{id}</span>
           </button>
         </li>
       ))}
@@ -144,13 +198,13 @@ function ModuleLinks({ ids, onSelect }: { ids: string[]; onSelect: (moduleId: st
   )
 }
 
-function ImportLines({ entries }: { entries: ImportEntry[] }) {
+function ImportLines({ entries, tone }: { entries: ImportEntry[]; tone?: 'warn' }) {
   return (
-    <ul className="space-y-1">
+    <ul className="overflow-hidden rounded-lg border border-line bg-canvas/60">
       {entries.map((entry) => (
-        <li key={`${entry.lineno}:${entry.raw}`} className="flex gap-2 font-mono text-[12px]">
-          <span className="w-8 shrink-0 text-right text-faint">L{entry.lineno}</span>
-          <code className="min-w-0 break-all text-muted">{entry.raw}</code>
+        <li key={`${entry.lineno}:${entry.raw}`} className="flex gap-2 border-b border-line/60 px-2 py-1 font-mono text-[11.5px] last:border-b-0">
+          <span className="w-7 shrink-0 text-right text-faint select-none">{entry.lineno}</span>
+          <code className={`min-w-0 break-all ${tone === 'warn' ? 'text-warn/90' : 'text-muted'}`}>{entry.raw}</code>
         </li>
       ))}
     </ul>

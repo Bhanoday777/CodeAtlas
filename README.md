@@ -171,29 +171,39 @@ Example, `GET /api/impact/shop.services.pricing` on the fixture (diagnostics sho
 ## Graph explorer (frontend)
 
 React 19 + TypeScript, Tailwind CSS v4, Cytoscape.js with the `cytoscape-dagre` layered layout.
+Inter and JetBrains Mono are bundled through Fontsource (no external font requests).
 
 - **Graph:** every module from `GET /api/graph` is a node and every edge an arrow, in the API's
   direction (**A → B means A imports B**). The layout places importers above the modules they import.
-  Packages have dashed borders; files that failed to parse have red borders. Labels show the last part
-  of the module ID; hovering shows the full ID and path.
-- **Controls:** zoom in/out, fit to view, and reset (re-runs the layout, which undoes dragged nodes, and
-  clears the selection). Mouse wheel and drag pan and zoom as well.
+  Labels show the last part of the module ID; hovering shows the full ID, path, and import counts.
+- **Package boxes:** modules are drawn inside nested boxes for their packages (`shop` contains
+  `shop.models`, `shop.services`, …), each with its own color, used consistently in the list, the
+  details panel, and the palette. Grouping comes from module IDs (`src/lib/packages.ts`); a package's
+  `__init__.py` sits inside its own box. Boxes are layout only: they are not modules and have no edges.
+- **Node size:** grows with the number of modules that import it, so heavily imported modules stand out.
+  Package `__init__.py` modules have dashed borders; files that failed to parse have red borders.
+- **Controls:** zoom in/out with a zoom readout, fit to view, and reset (re-runs the layout, which undoes
+  dragged nodes, and clears the selection). Mouse wheel and drag pan and zoom as well.
+- **Ctrl+K (Cmd+K):** quick-jump palette. Results are ranked: exact name, then name prefix, then the
+  rest of the ID, then path. Arrow keys and Enter select; Esc closes.
 - **Selection:** clicking a node or a module in the list selects it in both. The selected module's direct
   imports (blue) and direct importers (teal) are highlighted; everything else is dimmed. Only direct
   neighbors are shown: transitive impact is Day 5.
 - **Module details:** from `GET /api/modules/{id}`: path, imports, imported by, external and unresolved
   imports with line numbers. Module links in the panel select that module.
-- **Search:** filters by module ID or file path as you type (case-insensitive, surrounding spaces ignored).
-- **Summary and diagnostics:** the six counts from the graph response's `summary`, unchanged. The
-  Diagnostics drawer shows `GET /api/scan/issues`: scan errors, unresolved imports, self-imports, and the
+- **Module list:** grouped by package (collapsible) and filtered by module ID or file path as you type
+  (case-insensitive, surrounding spaces ignored).
+- **Summary and diagnostics:** the six counts from the graph response's `summary`, unchanged; the
+  package count is counted from the graph nodes. The issue cards and the rail icon open the
+  Diagnostics drawer, which shows `GET /api/scan/issues`: scan errors, unresolved imports, self-imports, and the
   analysis limitations, in separate sections.
 - **Failure states:** loading, backend unreachable, HTTP errors (including the API's 404 message), and
   responses that do not match the contract each get their own message, with Retry where it helps. The
   client checks response shapes and never turns a failure into an empty graph.
 
 Frontend tests (`npm test`) cover the API client (success, network failure, HTTP errors, malformed
-bodies, ID encoding), the graph conversion (edge direction, cycles, self-loops, duplicates, empty graph),
-and search. The UI itself was checked by hand in Chrome against the fixture repository.
+bodies, ID encoding), the graph conversion (edge direction, cycles, self-loops, duplicates, package
+nesting, node weights, empty graph), package grouping and colors, and search filtering and ranking. The UI itself was checked by hand in Chrome against the fixture repository.
 
 ## Known limitations (static analysis)
 
@@ -223,7 +233,7 @@ and search. The UI itself was checked by hand in Chrome against the fixture repo
 | 1 | Project setup, parser, fixture, parser tests | ✅ Done: 137 passing, 1 expected failure (known limitation) |
 | 2 | Graph engine, BFS impact analysis | ✅ Done: 206 passing, 1 expected failure (same known limitation) |
 | 3 | FastAPI endpoints | ✅ Done: 236 passing, 1 expected failure (same known limitation) |
-| 4 | Frontend graph + search | ✅ Done: 28 frontend tests passing; backend unchanged (236 passing, 1 expected failure) |
+| 4 | Frontend graph + search | ✅ Done: 41 frontend tests passing; backend unchanged (236 passing, 1 expected failure) |
 | 5 | Impact workflow UI | Not started |
 | 6 | Integration testing | Not started |
 | 7 | Docs, delivery | Not started |

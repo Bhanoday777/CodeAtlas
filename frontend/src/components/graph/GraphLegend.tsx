@@ -1,19 +1,49 @@
 import { useState } from 'react'
 
+import type { PackageModel } from '../../lib/packages'
+
+const MAX_PACKAGES = 10
+
 /** Explains the graph's visual encoding. Colors match graphStyle.ts. Collapsed by default to keep the canvas clear. */
-export function GraphLegend() {
+export function GraphLegend({ packages }: { packages: PackageModel }) {
   const [open, setOpen] = useState(false)
+  const shown = packages.clusters.slice(0, MAX_PACKAGES)
 
   return (
-    <div className="absolute right-3 bottom-3 max-w-[calc(100%-1.5rem)] rounded-md border border-line bg-surface/95 text-[11px] text-muted shadow-lg">
+    <div className="absolute right-3 bottom-3 w-[250px] max-w-[calc(100%-1.5rem)] overflow-hidden rounded-lg border border-line-strong bg-surface/85 text-[11px] text-muted shadow-(--shadow-float) backdrop-blur-md">
       {open && (
-        <div id="graph-legend" className="flex flex-col gap-1.5 border-b border-line px-3 py-2">
-          <LegendSwatch className="border-line-strong bg-raised" label="Module" />
-          <LegendSwatch className="border-dashed border-line-strong bg-surface" label="Package (__init__.py)" />
-          <LegendSwatch className="border-danger bg-raised" label="Could not be parsed" />
-          <div className="mt-0.5 border-t border-line pt-1.5 text-faint">When a module is selected:</div>
-          <LegendSwatch className="border-accent bg-raised" label="Modules it imports" />
-          <LegendSwatch className="border-incoming bg-incoming/15" label="Modules that import it" />
+        <div id="graph-legend" className="animate-fade-in space-y-3 border-b border-line px-3 py-2.5">
+          <div className="space-y-1.5">
+            <LegendSwatch className="border-line-strong" label="Module" />
+            <LegendSwatch className="border-dashed border-line-strong" label="Package __init__.py" />
+            <LegendSwatch className="border-danger" label="Could not be parsed" />
+            <div className="flex items-center gap-2">
+              <span className="flex w-[26px] items-end justify-center gap-0.5" aria-hidden="true">
+                <span className="h-1.5 w-2 rounded-[2px] border border-line-strong" />
+                <span className="h-2.5 w-3 rounded-[3px] border border-line-strong" />
+              </span>
+              <span>Larger = imported by more modules</span>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-faint">Selected module</p>
+            <LegendSwatch className="border-accent bg-accent/15" label="Modules it imports" />
+            <LegendSwatch className="border-incoming bg-incoming/15" label="Modules that import it" />
+          </div>
+          {shown.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-faint">Packages</p>
+              {shown.map((cluster) => (
+                <div key={cluster.id} className="flex items-center gap-2">
+                  <span className="size-2 shrink-0 rounded-full" style={{ background: cluster.color }} aria-hidden="true" />
+                  <span className="truncate font-mono">{cluster.id}</span>
+                </div>
+              ))}
+              {packages.clusters.length > MAX_PACKAGES && (
+                <p className="text-faint">+{packages.clusters.length - MAX_PACKAGES} more</p>
+              )}
+            </div>
+          )}
         </div>
       )}
       <button
@@ -21,11 +51,11 @@ export function GraphLegend() {
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls="graph-legend"
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:text-ink"
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-hover hover:text-ink"
       >
         <svg width="26" height="8" aria-hidden="true">
-          <path d="M1 4h18" stroke="#3a4352" strokeWidth="1.5" />
-          <path d="M18 0.5 25 4l-7 3.5Z" fill="#3a4352" />
+          <path d="M1 4h18" stroke="currentColor" strokeWidth="1.5" opacity="0.6" />
+          <path d="M18 0.5 25 4l-7 3.5Z" fill="currentColor" opacity="0.6" />
         </svg>
         <span>
           <span className="text-ink">A → B</span> means A imports B
@@ -39,7 +69,7 @@ export function GraphLegend() {
 function LegendSwatch({ className, label }: { className: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <span className={`inline-block h-2.5 w-[26px] rounded-[3px] border ${className}`} aria-hidden="true" />
+      <span className={`inline-block h-2.5 w-[26px] rounded-[3px] border bg-raised ${className}`} aria-hidden="true" />
       <span>{label}</span>
     </div>
   )

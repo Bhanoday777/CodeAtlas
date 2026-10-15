@@ -1,28 +1,50 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
 
 /* Design tokens. Dark-first; one accent (selection / interaction).
    The graph canvas cannot read CSS variables, so src/components/graph/graphStyle.ts
    mirrors the colors it needs. Change both together. */
 @theme {
-  --color-canvas: #0c0f14;
-  --color-surface: #12161d;
-  --color-raised: #181d26;
-  --color-hover: #1f2531;
-  --color-line: #252b36;
-  --color-line-strong: #343c4a;
+  --color-canvas: #090b0f;
+  --color-surface: #0e1116;
+  --color-raised: #141820;
+  --color-hover: #1a1f29;
+  --color-line: #1c222c;
+  --color-line-strong: #2a313d;
 
-  --color-ink: #e6e9ef;
-  --color-muted: #9aa3b2;
-  --color-faint: #6b7385;
+  --color-ink: #e8ebf1;
+  --color-muted: #9aa2b3;
+  --color-faint: #636c7d;
 
   --color-accent: #5b9dff;
-  --color-accent-ink: #b9d4ff;
+  --color-accent-ink: #c4dbff;
   --color-incoming: #3fb9a7;
   --color-warn: #e0ad4b;
   --color-danger: #ef6f68;
+  --color-ok: #4cc38a;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: ui-monospace, 'Cascadia Code', 'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Code', SFMono-Regular, Menlo, Consolas, monospace;
+
+  --shadow-panel: 0 0 0 1px rgb(255 255 255 / 0.02) inset, 0 12px 32px -16px rgb(0 0 0 / 0.7);
+  --shadow-float: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 16px 40px -12px rgb(0 0 0 / 0.75);
+
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-pop-in: pop-in 140ms ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(3px);
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.985);
+    }
+  }
 }
 
 @layer base {
@@ -43,6 +65,7 @@
     font-family: var(--font-sans);
     font-size: 14px;
     line-height: 1.45;
+    font-feature-settings: 'cv11', 'ss01';
     -webkit-font-smoothing: antialiased;
   }
 
@@ -53,6 +76,16 @@
 
   ::selection {
     background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  }
+
+  /* Quiet scrollbars that match the surfaces. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+
+  kbd {
+    font-family: var(--font-mono);
   }
 }
 
