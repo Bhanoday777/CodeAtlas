@@ -19,7 +19,11 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     root = Path(args[0])
-    scan = scan_repository(root)
+    try:
+        scan = scan_repository(root)
+    except NotADirectoryError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
     graph = DependencyGraph.from_scan(scan)
     print(
         f"Scanned {root.resolve()}: {len(graph.modules)} modules, "

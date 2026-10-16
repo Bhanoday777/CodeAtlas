@@ -163,3 +163,25 @@ def test_undecodable_file_is_reported(tmp_path):
     assert set(result.modules) == {"good", "bad"}
     assert [e.path for e in result.errors] == ["bad.py"]
     assert [(i.source, i.raw) for i in result.imports] == [("good", "import os")]
+
+
+# --- CLI ----------------------------------------------------------------------
+
+
+def test_cli_scan_report(capsys):
+    from app.parser.__main__ import main
+
+    assert main([str(FIXTURE_ROOT)]) == 0
+    out = capsys.readouterr().out
+    assert "Modules (16):" in out
+    assert "Local edges, A -> B means A imports B (14):" in out
+    assert "  shop/broken.py:3  SyntaxError:" in out
+
+
+def test_cli_scan_usage_and_missing_repository(tmp_path, capsys):
+    from app.parser.__main__ import main
+
+    assert main([]) == 2
+    assert "usage:" in capsys.readouterr().err
+    assert main([str(tmp_path / "missing")]) == 1
+    assert "error: Repository root is not a directory" in capsys.readouterr().err

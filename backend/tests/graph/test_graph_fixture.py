@@ -150,3 +150,8 @@ def test_cli_unknown_module_fails(capsys):
 def test_cli_usage_error(capsys):
     assert main([]) == 2
     assert "usage:" in capsys.readouterr().err
+
+
+def test_cli_missing_repository_fails_without_traceback(tmp_path, capsys):
+    assert main([str(tmp_path / "missing"), "shop"]) == 1
+    assert "error: Repository root is not a directory" in capsys.readouterr().err

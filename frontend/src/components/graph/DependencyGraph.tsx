@@ -102,11 +102,15 @@ export function DependencyGraph({ graph, packages, selectedId, impact, onSelect 
       setHovered(event.target.data() as ModuleNodeData)
       container.style.cursor = 'pointer'
     })
-    cy.on('mouseout', 'node.module', (event) => {
-      event.target.removeClass('hovered')
+    const clearHover = () => {
+      cy.nodes('.hovered').removeClass('hovered')
       setHovered(null)
       container.style.cursor = ''
-    })
+    }
+    cy.on('mouseout', 'node.module', clearHover)
+    // Moving from a node straight onto an overlay (controls, legend) leaves the canvas
+    // without a node mouseout, so the hover card would stay open.
+    container.addEventListener('mouseleave', clearHover)
 
     // The canvas measures labels with the web fonts; redraw once they have loaded.
     document.fonts?.ready.then(() => {
@@ -119,6 +123,7 @@ export function DependencyGraph({ graph, packages, selectedId, impact, onSelect 
 
     return () => {
       cancelAnimationFrame(frame)
+      container.removeEventListener('mouseleave', clearHover)
       observer.disconnect()
       cy.destroy()
       cyRef.current = null
@@ -231,6 +236,9 @@ export function DependencyGraph({ graph, packages, selectedId, impact, onSelect 
     const cy = cyRef.current
     if (!cy) return
     cy.stop()
+    // The layout moves nodes out from under the cursor without a mouseout.
+    cy.nodes('.hovered').removeClass('hovered')
+    setHovered(null)
     cy.layout(layoutOptions).run()
     onSelectRef.current(null)
   }

@@ -7,9 +7,18 @@ from app.parser.models import ImportKind
 from app.parser.scanner import scan_repository
 
 
-def main() -> None:
-    root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("../fixtures/sample_python_project")
-    result = scan_repository(root)
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    if len(args) != 1:
+        print("usage: python -m app.parser <repo_path>", file=sys.stderr)
+        return 2
+
+    root = Path(args[0])
+    try:
+        result = scan_repository(root)
+    except NotADirectoryError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
 
     print(f"Scanned {root.resolve()}")
     print(f"\nModules ({len(result.modules)}):")
@@ -29,8 +38,10 @@ def main() -> None:
 
     print(f"\nScan errors ({len(result.errors)}):")
     for error in result.errors:
-        print(f"  {error.path}:{error.lineno}  {error.message}")
+        location = error.path if error.lineno is None else f"{error.path}:{error.lineno}"
+        print(f"  {location}  {error.message}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -118,3 +118,30 @@ def test_submodule_of_namespace_package_resolves(tmp_path):
     }))
 
     assert scan.local_edges() == {("app", "nspkg.mod")}
+
+
+@pytest.mark.parametrize("error", [RecursionError, MemoryError])
+def test_file_too_complex_to_parse_is_a_scan_error(tmp_path, monkeypatch, error):
+    # ast.parse raises these for deeply nested source (e.g. generated code). The parser
+    # is made to raise them on one file, so the test never builds such a file.
+    from app.parser import scanner
+
+    root = make_repo(
+        tmp_path,
+        {"app/__init__.py": "", "app/deep.py": "x = 1\n", "app/a.py": "from app import b\n", "app/b.py": ""},
+    )
+    real_extract = scanner.extract_imports
+
+    def extract(source, filename="<unknown>"):
+        if filename == "app/deep.py":
+            raise error("too deeply nested")
+        return real_extract(source, filename=filename)
+
+    monkeypatch.setattr(scanner, "extract_imports", extract)
+    scan = scan_repository(root)
+
+    assert [(e.path, e.message) for e in scan.errors] == [
+        ("app/deep.py", f"{error.__name__}: source is too complex to parse")
+    ]
+    assert "app.deep" in scan.modules
+    assert scan.local_edges() == {("app.a", "app.b")}

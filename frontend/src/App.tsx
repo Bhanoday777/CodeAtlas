@@ -94,7 +94,8 @@ function App() {
                 <code className="rounded bg-raised px-1 py-0.5 font-mono text-[12px] text-ink">
                   .venv/Scripts/python -m uvicorn app.main:app
                 </code>{' '}
-                from <code className="font-mono text-[12px] text-ink">backend/</code>, and open this page at{' '}
+                (macOS/Linux: <code className="font-mono text-[12px] text-ink">.venv/bin/python</code>) from{' '}
+                <code className="font-mono text-[12px] text-ink">backend/</code>, and open this page at{' '}
                 <code className="font-mono text-[12px] text-ink">http://localhost:5173</code> (the origin the API allows).
               </p>
             )}
