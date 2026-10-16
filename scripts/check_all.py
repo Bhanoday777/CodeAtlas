@@ -37,7 +37,7 @@ def venv_python() -> str:
 def npm() -> str:
     found = shutil.which("npm")
     if found is None:
-        sys.exit("npm not found on PATH: install Node.js 20+ first.")
+        sys.exit("npm not found on PATH: install Node.js 22.12+ or 24+ first.")
     return found
 
 
