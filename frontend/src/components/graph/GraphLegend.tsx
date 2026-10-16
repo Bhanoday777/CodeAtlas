@@ -5,7 +5,7 @@ import type { PackageModel } from '../../lib/packages'
 const MAX_PACKAGES = 10
 
 /** Explains the graph's visual encoding. Colors match graphStyle.ts. Collapsed by default to keep the canvas clear. */
-export function GraphLegend({ packages }: { packages: PackageModel }) {
+export function GraphLegend({ packages, impactMode }: { packages: PackageModel; impactMode: boolean }) {
   const [open, setOpen] = useState(false)
   const shown = packages.clusters.slice(0, MAX_PACKAGES)
 
@@ -25,11 +25,25 @@ export function GraphLegend({ packages }: { packages: PackageModel }) {
               <span>Larger = imported by more modules</span>
             </div>
           </div>
-          <div className="space-y-1.5">
-            <p className="text-faint">Selected module</p>
-            <LegendSwatch className="border-accent bg-accent/15" label="Modules it imports" />
-            <LegendSwatch className="border-incoming bg-incoming/15" label="Modules that import it" />
-          </div>
+          {impactMode ? (
+            <div className="space-y-1.5">
+              <p className="text-faint">Change impact</p>
+              <LegendSwatch className="border-impact bg-impact" label="Changed module" />
+              <LegendSwatch className="border-impact bg-impact/15" label="Imports it directly (distance 1)" />
+              <LegendSwatch className="border-impact-2 bg-impact-2/10" label="Distance 2" />
+              <LegendSwatch className="border-impact-3 bg-impact-3/10" label="Distance 3 or more" />
+              <div className="flex items-center gap-2">
+                <span className="h-0.5 w-[26px] rounded-full bg-impact/70" aria-hidden="true" />
+                <span>Explanation path</span>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <p className="text-faint">Selected module</p>
+              <LegendSwatch className="border-accent bg-accent/15" label="Modules it imports" />
+              <LegendSwatch className="border-incoming bg-incoming/15" label="Modules that import it" />
+            </div>
+          )}
           {shown.length > 0 && (
             <div className="space-y-1">
               <p className="text-faint">Packages</p>

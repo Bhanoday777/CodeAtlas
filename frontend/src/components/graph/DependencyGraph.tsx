@@ -1,8 +1,9 @@
-import cytoscape, { type Core } from 'cytoscape'
+import cytoscape, { type CollectionReturnValue, type Core } from 'cytoscape'
 import dagre from 'cytoscape-dagre'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { toElements, type ModuleNodeData } from '../../lib/graphElements'
+import type { ImpactHighlight } from '../../lib/impact'
 import type { PackageModel } from '../../lib/packages'
 import type { GraphResponse } from '../../types/api'
 import { GraphControls } from './GraphControls'
@@ -11,24 +12,46 @@ import { graphStyle, layoutOptions } from './graphStyle'
 
 cytoscape.use(dagre)
 
-const SELECTION_CLASSES = 'selected dependency dependent outgoing incoming faded dimmed'
+const HIGHLIGHT_CLASSES =
+  'selected dependency dependent outgoing incoming faded dimmed ' +
+  'impact-changed impact-d1 impact-d2 impact-d3 impact-path impact-focus impact-muted'
 const ZOOM_STEP = 1.3
 const GRID_SIZE = 22
 const ANIMATION = { duration: 220, easing: 'ease-out-cubic' } as const
+/** Fitting a small impact set (or a single module) should not zoom in further than this. */
+const MAX_FIT_ZOOM = 1.25
+const FIT_PADDING = 60
+
+/** Like cy.fit(eles), but never zooms in past MAX_FIT_ZOOM. */
+function fitCapped(cy: Core, eles: CollectionReturnValue) {
+  const box = eles.boundingBox({})
+  const zoom = Math.min(
+    MAX_FIT_ZOOM,
+    (cy.width() - 2 * FIT_PADDING) / Math.max(box.w, 1),
+    (cy.height() - 2 * FIT_PADDING) / Math.max(box.h, 1),
+  )
+  cy.stop()
+  cy.animate({ center: { eles }, zoom: Math.max(cy.minZoom(), zoom), ...ANIMATION })
+}
 
 interface DependencyGraphProps {
   graph: GraphResponse
   packages: PackageModel
   selectedId: string | null
+  /** Impact mode: replaces the selection highlight while set. */
+  impact: ImpactHighlight | null
+  /** A tapped module, or null for the empty canvas. In impact mode this focuses a path instead of selecting. */
   onSelect: (moduleId: string | null) => void
 }
 
-export function DependencyGraph({ graph, packages, selectedId, onSelect }: DependencyGraphProps) {
+export function DependencyGraph({ graph, packages, selectedId, impact, onSelect }: DependencyGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const cyRef = useRef<Core | null>(null)
   const onSelectRef = useRef(onSelect)
   const [hovered, setHovered] = useState<ModuleNodeData | null>(null)
   const [zoom, setZoom] = useState(1)
+  // The impact set last fitted to the view, so the view moves once per report, not on every focus change.
+  const fittedImpactRef = useRef<string | null>(null)
 
   useEffect(() => {
     onSelectRef.current = onSelect
@@ -106,9 +129,9 @@ export function DependencyGraph({ graph, packages, selectedId, onSelect }: Depen
   // Reflect the selection without re-running the layout.
   useEffect(() => {
     const cy = cyRef.current
-    if (!cy) return
+    if (!cy || impact) return
     cy.batch(() => {
-      cy.elements().removeClass(SELECTION_CLASSES)
+      cy.elements().removeClass(HIGHLIGHT_CLASSES)
       if (selectedId === null) return
       const node = cy.getElementById(selectedId)
       if (node.empty()) return
@@ -135,7 +158,58 @@ export function DependencyGraph({ graph, packages, selectedId, onSelect }: Depen
       cy.stop()
       cy.animate({ center: { eles: node }, zoom: Math.max(cy.zoom(), 0.9) }, ANIMATION)
     }
-  }, [selectedId, elements])
+  }, [selectedId, impact, elements])
+
+  // Impact mode: the changed module, affected modules by distance, and their explanation paths.
+  useEffect(() => {
+    const cy = cyRef.current
+    if (!cy) return
+    if (!impact) {
+      fittedImpactRef.current = null
+      return
+    }
+    const changed = cy.getElementById(impact.changed)
+    cy.batch(() => {
+      cy.elements().removeClass(HIGHLIGHT_CLASSES)
+      if (changed.empty()) return
+      changed.addClass('impact-changed')
+      let focus = changed
+      for (const [id, bucket] of impact.buckets) {
+        focus = focus.union(cy.getElementById(id).addClass(`impact-d${bucket}`))
+      }
+      for (const id of impact.pathEdges) {
+        focus = focus.union(cy.getElementById(id).addClass('impact-path'))
+      }
+      cy.elements('node.module, edge').difference(focus).addClass('faded')
+      cy.nodes('.cluster').difference(focus.nodes().ancestors()).addClass('dimmed')
+
+      if (impact.focus) {
+        const path = cy.collection()
+        for (const id of [...impact.focus.nodes, ...impact.focus.edges]) path.merge(cy.getElementById(id))
+        path.addClass('impact-focus')
+        focus.difference(path).addClass('impact-muted')
+      }
+    })
+
+    // Once the report arrives, bring the whole impact set into view.
+    const key = `${impact.changed} | ${impact.ready}`
+    if (impact.ready && fittedImpactRef.current !== key && changed.nonempty()) {
+      fittedImpactRef.current = key
+      const nodes = cy.collection().merge(changed)
+      for (const id of impact.buckets.keys()) nodes.merge(cy.getElementById(id))
+      fitCapped(cy, nodes)
+      return
+    }
+
+    // A focused path that is partly off-screen is brought into view.
+    if (impact.focus) {
+      const path = cy.collection()
+      for (const id of impact.focus.nodes) path.merge(cy.getElementById(id))
+      const box = path.renderedBoundingBox({})
+      const visible = box.x1 >= 0 && box.y1 >= 0 && box.x2 <= cy.width() && box.y2 <= cy.height()
+      if (!visible) fitCapped(cy, path)
+    }
+  }, [impact, elements])
 
   const zoomBy = (factor: number) => {
     const cy = cyRef.current
@@ -180,7 +254,7 @@ export function DependencyGraph({ graph, packages, selectedId, onSelect }: Depen
         onFit={fit}
         onReset={reset}
       />
-      <GraphLegend packages={packages} />
+      <GraphLegend packages={packages} impactMode={impact !== null} />
       {hovered && <HoverCard node={hovered} />}
     </div>
   )

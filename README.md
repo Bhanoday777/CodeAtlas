@@ -6,8 +6,8 @@ CodeAtlas statically parses a Python repository (it never executes the code), bu
 module dependency graph from local imports, and estimates which modules may be affected
 when a given module changes.
 
-> **Status: in development (Day 4 of 7).** The parser, the graph / impact engine, the HTTP
-> API, and a graph explorer UI are implemented. The change-impact UI is next (Day 5).
+> **Status: in development (Day 5 of 7).** The parser, the graph / impact engine, the HTTP
+> API, the graph explorer UI, and the change-impact UI are implemented. Integration testing is next (Day 6).
 
 ## Repository layout
 
@@ -18,11 +18,11 @@ backend/    FastAPI service (Day 3) + static import parser (Day 1) + graph engin
   app/api/      HTTP routes, response schemas, repository config
   app/main.py   FastAPI app (scans the configured repository once at startup)
   tests/        pytest suites
-frontend/   React + TypeScript + Vite UI (Day 4): graph explorer over the API
+frontend/   React + TypeScript + Vite UI (Days 4-5): graph explorer and change-impact analysis
   src/services/   API client (the only code that calls the backend)
   src/hooks/      request state (loading / error / retry) for each endpoint
-  src/lib/        pure helpers: API graph -> Cytoscape elements, module search
-  src/components/ layout, graph (Cytoscape), module explorer and details, diagnostics
+  src/lib/        pure helpers: API graph -> Cytoscape elements, module search, impact grouping
+  src/components/ layout, graph (Cytoscape), module explorer and details, impact report, diagnostics
 fixtures/   sample_python_project: small repo with hand-verified import relationships
 ```
 
@@ -185,10 +185,11 @@ Inter and JetBrains Mono are bundled through Fontsource (no external font reques
 - **Controls:** zoom in/out with a zoom readout, fit to view, and reset (re-runs the layout, which undoes
   dragged nodes, and clears the selection). Mouse wheel and drag pan and zoom as well.
 - **Ctrl+K (Cmd+K):** quick-jump palette. Results are ranked: exact name, then name prefix, then the
-  rest of the ID, then path. Arrow keys and Enter select; Esc closes.
+  rest of the ID, then path. Arrow keys and Enter select; Shift+Enter analyzes the module's change
+  impact; Esc closes.
 - **Selection:** clicking a node or a module in the list selects it in both. The selected module's direct
   imports (blue) and direct importers (teal) are highlighted; everything else is dimmed. Only direct
-  neighbors are shown: transitive impact is Day 5.
+  neighbors are shown here; transitive impact is a separate mode (below).
 - **Module details:** from `GET /api/modules/{id}`: path, imports, imported by, external and unresolved
   imports with line numbers. Module links in the panel select that module.
 - **Module list:** grouped by package (collapsible) and filtered by module ID or file path as you type
@@ -201,9 +202,38 @@ Inter and JetBrains Mono are bundled through Fontsource (no external font reques
   responses that do not match the contract each get their own message, with Retry where it helps. The
   client checks response shapes and never turns a failure into an empty graph.
 
+### Change impact (Day 5)
+
+"If this module changes, which modules may be affected, and why?" Impact is a separate mode, entered
+explicitly, so it is never confused with the direct-neighbor selection highlight.
+
+- **Entering:** the **Analyze impact** button in the module details, or **Shift+Enter** in the Ctrl+K
+  palette. The data comes from `GET /api/impact/{id}`; the UI only displays it (no second algorithm).
+- **Graph:** the changed module is filled orange; affected modules are outlined in a warm ramp by
+  distance (1, 2, and 3 or more share the last color); the edges drawn are the explanation paths, one
+  shortest import chain per affected module. Everything else is dimmed, and the view fits the impact set.
+- **Report:** replaces the details panel while the mode is on: direct / transitive / total counts,
+  the API's diagnostics as "this list may be incomplete" caveats (with a link to the Diagnostics drawer),
+  and the affected modules grouped by distance. A module nothing imports gets an explicit "no other
+  module is affected" state.
+- **Why is it affected?** Clicking a module in the report, the graph, or the module list focuses its
+  explanation path (for example `manage → shop.main → shop.services.orders → shop.services.pricing`):
+  the path is emphasized on the graph and listed step by step in the report. Clicking it again, the
+  changed module, or the empty canvas clears the focus.
+- **Leaving:** Esc, or Exit in the report or on the canvas banner. The changed module stays selected,
+  so its details are shown again.
+- The client rejects an impact response whose paths, distances, and direct / transitive lists disagree,
+  since the graph, the groups, and the counts are all drawn from them.
+
+Report export (Markdown / JSON) is planned for Day 7.
+
 Frontend tests (`npm test`) cover the API client (success, network failure, HTTP errors, malformed
-bodies, ID encoding), the graph conversion (edge direction, cycles, self-loops, duplicates, package
-nesting, node weights, empty graph), package grouping and colors, and search filtering and ranking. The UI itself was checked by hand in Chrome against the fixture repository.
+bodies, ID encoding, inconsistent impact reports), the graph conversion (edge direction, cycles,
+self-loops, duplicates, package nesting, node weights, empty graph), package grouping and colors,
+search filtering and ranking, and impact grouping and highlighting (distance buckets, explanation-path
+edges, focus, cycles, empty and stale reports). The UI itself was checked by hand in Chrome against the
+fixture repository: the impact of `shop.services.pricing` and `shop.models.order` matches the API
+example above and the `python -m app.graph` CLI.
 
 ## Known limitations (static analysis)
 
@@ -234,7 +264,7 @@ nesting, node weights, empty graph), package grouping and colors, and search fil
 | 2 | Graph engine, BFS impact analysis | ✅ Done: 206 passing, 1 expected failure (same known limitation) |
 | 3 | FastAPI endpoints | ✅ Done: 236 passing, 1 expected failure (same known limitation) |
 | 4 | Frontend graph + search | ✅ Done: 41 frontend tests passing; backend unchanged (236 passing, 1 expected failure) |
-| 5 | Impact workflow UI | Not started |
+| 5 | Impact workflow UI | ✅ Done: 60 frontend tests passing; backend unchanged (236 passing, 1 expected failure) |
 | 6 | Integration testing | Not started |
 | 7 | Docs, delivery | Not started |
 

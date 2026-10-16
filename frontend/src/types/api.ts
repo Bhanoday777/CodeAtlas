@@ -88,3 +88,23 @@ export interface ScanIssuesResponse {
   diagnostics: Diagnostic[]
   limitations: string[]
 }
+
+export interface AffectedModule {
+  id: string
+  /** Number of import steps from this module to the changed module (1 = imports it directly). */
+  distance: number
+  /** One shortest import chain: [id, …, changed_module]; each step imports the next. */
+  path: string[]
+}
+
+export interface ImpactResponse {
+  changed_module: string
+  /** Sorted by distance, then ID. */
+  affected: AffectedModule[]
+  /** IDs at distance 1. */
+  direct: string[]
+  /** IDs at distance 2 or more. */
+  transitive: string[]
+  /** Known reasons the affected list may be incomplete. */
+  diagnostics: Diagnostic[]
+}

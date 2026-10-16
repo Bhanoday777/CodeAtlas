@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { GraphResponse, ModuleDetail } from '../types/api'
+import type { GraphResponse, ImpactResponse, ModuleDetail } from '../types/api'
 import { ApiError, createApiClient, resolveBaseUrl } from './api'
 
 const BASE = 'http://api.test'
@@ -144,5 +144,61 @@ describe('getScanIssues', () => {
     const { client, fetchMock } = clientReturning(jsonResponse(issues))
     await expect(client.getScanIssues()).resolves.toEqual(issues)
     expect(fetchMock.mock.calls[0][0]).toBe(`${BASE}/api/scan/issues`)
+  })
+})
+
+// The README's example: GET /api/impact/shop.services.pricing on the fixture.
+const IMPACT: ImpactResponse = {
+  changed_module: 'shop.services.pricing',
+  affected: [
+    { id: 'shop.lazy', distance: 1, path: ['shop.lazy', 'shop.services.pricing'] },
+    { id: 'shop.services.orders', distance: 1, path: ['shop.services.orders', 'shop.services.pricing'] },
+    { id: 'shop.main', distance: 2, path: ['shop.main', 'shop.services.orders', 'shop.services.pricing'] },
+    { id: 'shop.services', distance: 2, path: ['shop.services', 'shop.services.orders', 'shop.services.pricing'] },
+    { id: 'manage', distance: 3, path: ['manage', 'shop.main', 'shop.services.orders', 'shop.services.pricing'] },
+  ],
+  direct: ['shop.lazy', 'shop.services.orders'],
+  transitive: ['shop.main', 'shop.services', 'manage'],
+  diagnostics: [{ code: 'scan_errors', message: '1 file(s) could not be parsed' }],
+}
+
+describe('getImpact', () => {
+  it('returns the impact report', async () => {
+    const { client, fetchMock } = clientReturning(jsonResponse(IMPACT))
+    await expect(client.getImpact('shop.services.pricing')).resolves.toEqual(IMPACT)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${BASE}/api/impact/shop.services.pricing`)
+  })
+
+  it('percent-encodes the module ID', async () => {
+    const { client, fetchMock } = clientReturning(jsonResponse(IMPACT))
+    await client.getImpact('pkg/x?y')
+    expect(fetchMock.mock.calls[0][0]).toBe(`${BASE}/api/impact/pkg%2Fx%3Fy`)
+  })
+
+  it('accepts a module that nothing imports', async () => {
+    const empty = { changed_module: 'manage', affected: [], direct: [], transitive: [], diagnostics: [] }
+    const { client } = clientReturning(jsonResponse(empty))
+    await expect(client.getImpact('manage')).resolves.toEqual(empty)
+  })
+
+  it.each([
+    ['a path that does not start at the affected module', { 0: { ...IMPACT.affected[0], path: ['shop.main', 'shop.services.pricing'] } }],
+    ['a path that does not end at the changed module', { 0: { ...IMPACT.affected[0], path: ['shop.lazy', 'shop.main'] } }],
+    ['a distance that does not match the path length', { 0: { ...IMPACT.affected[0], distance: 2 } }],
+  ])('rejects %s', async (_name, patch) => {
+    const affected = Object.assign([...IMPACT.affected], patch)
+    const { client } = clientReturning(jsonResponse({ ...IMPACT, affected }))
+    expect((await caught(client.getImpact('shop.services.pricing'))).kind).toBe('invalid')
+  })
+
+  it('rejects direct / transitive lists that disagree with the distances', async () => {
+    const { client } = clientReturning(jsonResponse({ ...IMPACT, direct: ['shop.lazy'] }))
+    expect((await caught(client.getImpact('shop.services.pricing'))).kind).toBe('invalid')
+  })
+
+  it("surfaces the backend's 404 for an unknown module", async () => {
+    const { client } = clientReturning(jsonResponse({ detail: "Unknown module: 'nope'" }, 404, 'Not Found'))
+    const error = await caught(client.getImpact('nope'))
+    expect(error.status).toBe(404)
   })
 })

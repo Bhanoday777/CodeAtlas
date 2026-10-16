@@ -4,7 +4,10 @@
 // Every failure becomes an ApiError; nothing is turned into an empty result.
 
 import type {
+  AffectedModule,
+  Diagnostic,
   GraphResponse,
+  ImpactResponse,
   ImportEntry,
   ImportIssue,
   ModuleDetail,
@@ -65,6 +68,10 @@ function isImportIssue(value: unknown): value is ImportIssue {
   return isRecord(value) && isImportEntry(value) && isString(value.module)
 }
 
+function isDiagnostic(value: unknown): value is Diagnostic {
+  return isRecord(value) && isString(value.code) && isString(value.message)
+}
+
 export function isGraphResponse(value: unknown): value is GraphResponse {
   if (!isRecord(value) || !isString(value.repository)) return false
   const { nodes, edges, summary } = value
@@ -118,12 +125,41 @@ export function isScanIssuesResponse(value: unknown): value is ScanIssuesRespons
     ) &&
     isArrayOf(value.unresolved_imports, isImportIssue) &&
     isArrayOf(value.self_imports, isImportIssue) &&
-    isArrayOf(
-      value.diagnostics,
-      (d): d is ScanIssuesResponse['diagnostics'][number] => isRecord(d) && isString(d.code) && isString(d.message),
-    ) &&
+    isArrayOf(value.diagnostics, isDiagnostic) &&
     isArrayOf(value.limitations, isString)
   )
+}
+
+function isAffectedModule(value: unknown): value is AffectedModule {
+  return isRecord(value) && isString(value.id) && isNumber(value.distance) && isArrayOf(value.path, isString)
+}
+
+export function isImpactResponse(value: unknown): value is ImpactResponse {
+  if (
+    !isRecord(value) ||
+    !isString(value.changed_module) ||
+    !isArrayOf(value.affected, isAffectedModule) ||
+    !isArrayOf(value.direct, isString) ||
+    !isArrayOf(value.transitive, isString) ||
+    !isArrayOf(value.diagnostics, isDiagnostic)
+  ) {
+    return false
+  }
+  // The UI draws each path on the graph and groups modules by distance, so the
+  // three views of the same report must agree.
+  const { changed_module: changed, affected } = value
+  const pathsOk = affected.every(
+    (m) =>
+      m.id !== changed &&
+      m.distance >= 1 &&
+      m.path.length === m.distance + 1 &&
+      m.path[0] === m.id &&
+      m.path[m.path.length - 1] === changed,
+  )
+  const ids = (distanceOk: (d: number) => boolean) =>
+    affected.filter((m) => distanceOk(m.distance)).map((m) => m.id)
+  const sameIds = (a: string[], b: string[]) => a.length === b.length && a.every((id, i) => id === b[i])
+  return pathsOk && sameIds(value.direct, ids((d) => d === 1)) && sameIds(value.transitive, ids((d) => d > 1))
 }
 
 // --- Client --------------------------------------------------------------------
@@ -133,6 +169,7 @@ export interface ApiClient {
   getGraph(signal?: AbortSignal): Promise<GraphResponse>
   getModule(moduleId: string, signal?: AbortSignal): Promise<ModuleDetail>
   getScanIssues(signal?: AbortSignal): Promise<ScanIssuesResponse>
+  getImpact(moduleId: string, signal?: AbortSignal): Promise<ImpactResponse>
 }
 
 export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = (...args) => fetch(...args)): ApiClient {
@@ -170,6 +207,8 @@ export function createApiClient(baseUrl: string, fetchImpl: typeof fetch = (...a
     getModule: (moduleId, signal) =>
       request(`/api/modules/${encodeURIComponent(moduleId)}`, isModuleDetail, signal),
     getScanIssues: (signal) => request('/api/scan/issues', isScanIssuesResponse, signal),
+    getImpact: (moduleId, signal) =>
+      request(`/api/impact/${encodeURIComponent(moduleId)}`, isImpactResponse, signal),
   }
 }
 

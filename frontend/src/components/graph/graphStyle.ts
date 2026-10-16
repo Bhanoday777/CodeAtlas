@@ -11,6 +11,14 @@ export const palette = {
   incoming: '#3fb9a7',
   incomingFill: '#0f2622',
   danger: '#ef6f68',
+  // Change impact, by distance from the changed module (index.css --color-impact*).
+  impact: '#ff8f4d',
+  impactFill: '#3a1f10',
+  impact2: '#e9a25f',
+  impact2Fill: '#2b1d10',
+  impact3: '#b98a64',
+  impact3Fill: '#1f1812',
+  impactInk: '#fff1e8',
 } as const
 
 export const SANS = '"Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
@@ -149,6 +157,57 @@ export const graphStyle: StylesheetJson = [
   {
     selector: '.faded',
     style: { opacity: 0.16 },
+  },
+
+  // --- Change impact: the changed module, affected modules by distance, explanation paths ---
+  {
+    selector: 'node.module.impact-d1',
+    style: { 'background-color': palette.impactFill, 'border-color': palette.impact, 'border-opacity': 1, 'border-width': 1.75 },
+  },
+  {
+    selector: 'node.module.impact-d2',
+    style: { 'background-color': palette.impact2Fill, 'border-color': palette.impact2, 'border-opacity': 1, 'border-width': 1.5 },
+  },
+  {
+    selector: 'node.module.impact-d3',
+    style: { 'background-color': palette.impact3Fill, 'border-color': palette.impact3, 'border-opacity': 1 },
+  },
+  {
+    selector: 'edge.impact-path',
+    style: { 'line-color': palette.impact, 'target-arrow-color': palette.impact, width: 1.75, opacity: 0.7, 'z-index': 5 },
+  },
+  {
+    selector: 'node.module.impact-changed',
+    style: {
+      'background-color': palette.impact,
+      'border-color': palette.impact,
+      'border-opacity': 1,
+      'border-width': 2,
+      color: '#1a0d05',
+      'font-weight': 700,
+      'underlay-color': palette.impact,
+      'underlay-opacity': 0.22,
+      'underlay-padding': 7,
+      'underlay-shape': 'round-rectangle',
+      'z-index': 10,
+    },
+  },
+  {
+    // One explanation path picked in the report or on the graph; the rest of the impact set steps back.
+    selector: '.impact-muted',
+    style: { opacity: 0.4 },
+  },
+  {
+    selector: 'node.module.impact-focus',
+    style: { 'border-width': 2.5, color: palette.impactInk, 'font-weight': 650, 'z-index': 9 },
+  },
+  {
+    selector: 'node.module.impact-changed.impact-focus',
+    style: { color: '#1a0d05' },
+  },
+  {
+    selector: 'edge.impact-focus',
+    style: { width: 3, opacity: 1, 'z-index': 8 },
   },
 ]
 

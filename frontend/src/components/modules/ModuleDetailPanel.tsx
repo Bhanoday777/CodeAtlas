@@ -12,9 +12,10 @@ interface ModuleDetailPanelProps {
   selectedId: string | null
   packages: PackageModel
   onSelect: (moduleId: string) => void
+  onAnalyzeImpact: (moduleId: string) => void
 }
 
-export function ModuleDetailPanel({ selectedId, packages, onSelect }: ModuleDetailPanelProps) {
+export function ModuleDetailPanel({ selectedId, packages, onSelect, onAnalyzeImpact }: ModuleDetailPanelProps) {
   const detail = useModuleDetail(selectedId)
 
   return (
@@ -37,7 +38,13 @@ export function ModuleDetailPanel({ selectedId, packages, onSelect }: ModuleDeta
       )}
       {detail.status === 'success' && (
         // Keyed so the fade-in replays when the selection changes.
-        <ModuleDetailBody key={detail.data.id} module={detail.data} packages={packages} onSelect={onSelect} />
+        <ModuleDetailBody
+          key={detail.data.id}
+          module={detail.data}
+          packages={packages}
+          onSelect={onSelect}
+          onAnalyzeImpact={onAnalyzeImpact}
+        />
       )}
     </section>
   )
@@ -62,9 +69,10 @@ interface BodyProps {
   module: ModuleDetail
   packages: PackageModel
   onSelect: (moduleId: string) => void
+  onAnalyzeImpact: (moduleId: string) => void
 }
 
-function ModuleDetailBody({ module, packages, onSelect }: BodyProps) {
+function ModuleDetailBody({ module, packages, onSelect, onAnalyzeImpact }: BodyProps) {
   const pkg = packages.clusterOf.get(module.id) ?? null
 
   return (
@@ -103,6 +111,16 @@ function ModuleDetailBody({ module, packages, onSelect }: BodyProps) {
             className={module.unresolved_imports.length > 0 ? 'text-warn' : 'text-ink'}
           />
         </dl>
+
+        <button
+          type="button"
+          onClick={() => onAnalyzeImpact(module.id)}
+          title="Which modules may be affected if this module changes"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-impact/40 bg-impact/10 px-3 py-1.5 text-[12.5px] font-medium text-impact transition-colors hover:bg-impact/20"
+        >
+          <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
+          Analyze impact
+        </button>
       </header>
 
       <Section

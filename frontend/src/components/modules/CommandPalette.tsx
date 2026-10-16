@@ -12,6 +12,8 @@ interface CommandPaletteProps {
   nodes: GraphNode[]
   packages: PackageModel
   onSelect: (moduleId: string) => void
+  /** Shift+Enter: analyze the change impact of the chosen module. */
+  onAnalyzeImpact: (moduleId: string) => void
   onClose: () => void
 }
 
@@ -19,7 +21,7 @@ interface CommandPaletteProps {
  * Keyboard quick-jump to a module (Ctrl/Cmd+K). Mounted only while open, so every
  * opening starts with an empty query. Focus returns to where it was on close.
  */
-export function CommandPalette({ nodes, packages, onSelect, onClose }: CommandPaletteProps) {
+export function CommandPalette({ nodes, packages, onSelect, onAnalyzeImpact, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const results = useMemo(() => rankModules(nodes, query, MAX_RESULTS), [nodes, query])
@@ -36,9 +38,10 @@ export function CommandPalette({ nodes, packages, onSelect, onClose }: CommandPa
     listRef.current?.querySelector<HTMLElement>(`[data-index="${active}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [active])
 
-  const choose = (node: GraphNode | undefined) => {
+  const choose = (node: GraphNode | undefined, impact = false) => {
     if (!node) return
-    onSelect(node.id)
+    if (impact) onAnalyzeImpact(node.id)
+    else onSelect(node.id)
     onClose()
   }
 
@@ -50,7 +53,7 @@ export function CommandPalette({ nodes, packages, onSelect, onClose }: CommandPa
       setActive((i) => (i + step + results.length) % results.length)
     } else if (event.key === 'Enter') {
       event.preventDefault()
-      choose(results[active])
+      choose(results[active], event.shiftKey)
     } else if (event.key === 'Escape') {
       event.preventDefault()
       onClose()
@@ -100,7 +103,7 @@ export function CommandPalette({ nodes, packages, onSelect, onClose }: CommandPa
                 role="option"
                 aria-selected={index === active}
                 onMouseMove={() => setActive(index)}
-                onClick={() => choose(node)}
+                onClick={(event) => choose(node, event.shiftKey)}
                 className={`flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 ${index === active ? 'bg-hover' : ''}`}
               >
                 <span className="size-2 shrink-0 rounded-full" style={{ background: packages.colorOf(node.id) }} aria-hidden="true" />
@@ -116,7 +119,11 @@ export function CommandPalette({ nodes, packages, onSelect, onClose }: CommandPa
                 <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums" title="Imports · imported by">
                   →{node.dependency_count} ←{node.dependent_count}
                 </span>
-                {index === active && <kbd className="text-[11px] text-muted">↵</kbd>}
+                {index === active && (
+                  <kbd className="text-[11px] text-muted" title="Enter selects · Shift+Enter analyzes impact">
+                    ↵
+                  </kbd>
+                )}
               </li>
             ))}
           </ul>
@@ -128,6 +135,9 @@ export function CommandPalette({ nodes, packages, onSelect, onClose }: CommandPa
           </span>
           <span>
             <kbd className="text-muted">↵</kbd> select
+          </span>
+          <span>
+            <kbd className="text-impact">⇧↵</kbd> analyze impact
           </span>
           <span>
             <kbd className="text-muted">esc</kbd> close

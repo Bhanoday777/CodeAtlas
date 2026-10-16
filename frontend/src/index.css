@@ -20,6 +20,10 @@
   --color-accent: #5b9dff;
   --color-accent-ink: #c4dbff;
   --color-incoming: #3fb9a7;
+  /* Change impact: one warm hue, strongest nearest the changed module. */
+  --color-impact: #ff8f4d;
+  --color-impact-2: #e9a25f;
+  --color-impact-3: #b98a64;
   --color-warn: #e0ad4b;
   --color-danger: #ef6f68;
   --color-ok: #4cc38a;
