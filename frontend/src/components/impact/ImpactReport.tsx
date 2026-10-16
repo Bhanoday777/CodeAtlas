@@ -2,11 +2,12 @@ import { useEffect, useRef } from 'react'
 
 import type { RequestState } from '../../hooks/useApiRequest'
 import { errorTitle } from '../../lib/errorText'
+import { downloadFile, exportFileName, impactToJson, impactToMarkdown } from '../../lib/exportReport'
 import { shortLabel } from '../../lib/graphElements'
 import { distanceBucket, groupByDistance, stepVerb, type DistanceBucket } from '../../lib/impact'
 import type { PackageModel } from '../../lib/packages'
 import type { AffectedModule, ImpactResponse } from '../../types/api'
-import { AlertIcon, CloseIcon } from '../common/icons'
+import { AlertIcon, CloseIcon, DownloadIcon } from '../common/icons'
 import { Spinner, StatusMessage } from '../common/StatusMessage'
 
 // Tailwind classes per distance bucket; the graph uses the same colors (graphStyle.ts).
@@ -14,6 +15,8 @@ const BUCKET_DOT: Record<DistanceBucket, string> = { 1: 'bg-impact', 2: 'bg-impa
 const BUCKET_TEXT: Record<DistanceBucket, string> = { 1: 'text-impact', 2: 'text-impact-2', 3: 'text-impact-3' }
 
 interface ImpactReportProps {
+  /** Repository name, recorded in exported reports. */
+  repository: string
   changedId: string
   report: RequestState<ImpactResponse> & { retry: () => void }
   focusedId: string | null
@@ -25,7 +28,7 @@ interface ImpactReportProps {
 }
 
 /** Impact mode's replacement for the details panel: what may be affected if `changedId` changes, and why. */
-export function ImpactReport({ changedId, report, focusedId, packages, onFocus, onExit, onOpenDiagnostics }: ImpactReportProps) {
+export function ImpactReport({ repository, changedId, report, focusedId, packages, onFocus, onExit, onOpenDiagnostics }: ImpactReportProps) {
   return (
     <section aria-label={`Change impact of ${changedId}`} className="flex h-full min-h-0 flex-col">
       <header className="border-b border-line px-4 pt-4 pb-3.5">
@@ -69,6 +72,7 @@ export function ImpactReport({ changedId, report, focusedId, packages, onFocus, 
           // Keyed so the fade-in replays for each new report.
           key={report.data.changed_module}
           report={report.data}
+          repository={repository}
           focusedId={focusedId}
           packages={packages}
           onFocus={onFocus}
@@ -81,13 +85,14 @@ export function ImpactReport({ changedId, report, focusedId, packages, onFocus, 
 
 interface ReportBodyProps {
   report: ImpactResponse
+  repository: string
   focusedId: string | null
   packages: PackageModel
   onFocus: (moduleId: string | null) => void
   onOpenDiagnostics: () => void
 }
 
-function ReportBody({ report, focusedId, packages, onFocus, onOpenDiagnostics }: ReportBodyProps) {
+function ReportBody({ report, repository, focusedId, packages, onFocus, onOpenDiagnostics }: ReportBodyProps) {
   const groups = groupByDistance(report)
 
   return (
@@ -99,6 +104,7 @@ function ReportBody({ report, focusedId, packages, onFocus, onOpenDiagnostics }:
           <Stat label="Transitive" value={report.transitive.length} className="text-impact-2" />
         </dl>
         {report.diagnostics.length > 0 && <Caveats report={report} onOpenDiagnostics={onOpenDiagnostics} />}
+        <ExportButtons report={report} repository={repository} />
       </div>
 
       {groups.length === 0 ? (
@@ -139,6 +145,30 @@ function ReportBody({ report, focusedId, packages, onFocus, onOpenDiagnostics }:
           )
         })
       )}
+    </div>
+  )
+}
+
+/** Saves the loaded report, caveats included, as Markdown (for a PR or issue) or JSON. */
+function ExportButtons({ report, repository }: { report: ImpactResponse; repository: string }) {
+  const save = (format: 'md' | 'json') => {
+    const context = { repository, exportedAt: new Date().toISOString() }
+    const text = format === 'md' ? impactToMarkdown(report, context) : impactToJson(report, context)
+    downloadFile(exportFileName(report, format), text, format === 'md' ? 'text/markdown' : 'application/json')
+  }
+  const button =
+    'inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-raised px-2 py-1 text-sm text-muted transition-colors hover:bg-hover hover:text-ink'
+  return (
+    <div className="mt-3 flex items-center gap-1.5">
+      <span className="mr-auto text-xs text-faint">Export report</span>
+      <button type="button" onClick={() => save('md')} aria-label="Export report as Markdown" className={button}>
+        <DownloadIcon width={12} height={12} />
+        Markdown
+      </button>
+      <button type="button" onClick={() => save('json')} aria-label="Export report as JSON" className={button}>
+        <DownloadIcon width={12} height={12} />
+        JSON
+      </button>
     </div>
   )
 }

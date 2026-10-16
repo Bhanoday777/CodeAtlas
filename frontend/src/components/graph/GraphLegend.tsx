@@ -10,7 +10,7 @@ export function GraphLegend({ packages, impactMode }: { packages: PackageModel; 
   const shown = packages.clusters.slice(0, MAX_PACKAGES)
 
   return (
-    <div className="absolute right-3 bottom-3 w-[250px] max-w-[calc(100%-1.5rem)] overflow-hidden rounded-lg border border-line-strong bg-surface/85 text-xs text-muted shadow-(--shadow-float) backdrop-blur-md">
+    <div className="absolute right-3 bottom-3 w-[272px] max-w-[calc(100%-1.5rem)] overflow-hidden rounded-lg border border-line-strong bg-surface/85 text-xs text-muted shadow-(--shadow-float) backdrop-blur-md">
       {open && (
         <div id="graph-legend" className="animate-fade-in space-y-3 border-b border-line px-3 py-2.5">
           <div className="space-y-1.5">

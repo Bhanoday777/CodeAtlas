@@ -233,6 +233,7 @@ function GraphWorkspace({ graph, packages, selectedId, onSelect, impact, onAnaly
       <div className="order-3 min-h-0 border-line bg-surface max-lg:border-t lg:border-l">
         {changedId !== null ? (
           <ImpactReport
+            repository={graph.repository}
             changedId={changedId}
             report={report}
             focusedId={focusedId}
