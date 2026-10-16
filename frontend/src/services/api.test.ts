@@ -147,7 +147,7 @@ describe('getScanIssues', () => {
   })
 })
 
-// The README's example: GET /api/impact/shop.services.pricing on the fixture.
+// GET /api/impact/shop.services.pricing on the fixture (contract/fixture/impact--shop.services.pricing.json).
 const IMPACT: ImpactResponse = {
   changed_module: 'shop.services.pricing',
   affected: [

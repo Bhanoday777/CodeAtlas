@@ -1,7 +1,7 @@
 // The e2e expectations are written for the fixture repository. A reused backend
 // that scans something else would fail every test for a confusing reason, so stop early.
 
-const EXPECTED = { repository: 'sample_python_project', module_count: 16, edge_count: 14 }
+const EXPECTED = { repository: 'sample_python_project', module_count: 16, edge_count: 34 }
 
 export default async function globalSetup() {
   const response = await fetch('http://127.0.0.1:8000/api/health')

@@ -3,7 +3,15 @@
     "edges": [
       {
         "source": "manage",
+        "target": "shop"
+      },
+      {
+        "source": "manage",
         "target": "shop.main"
+      },
+      {
+        "source": "shop.cycle_a",
+        "target": "shop"
       },
       {
         "source": "shop.cycle_a",
@@ -11,7 +19,19 @@
       },
       {
         "source": "shop.cycle_b",
+        "target": "shop"
+      },
+      {
+        "source": "shop.cycle_b",
         "target": "shop.cycle_a"
+      },
+      {
+        "source": "shop.dupes",
+        "target": "shop"
+      },
+      {
+        "source": "shop.dupes",
+        "target": "shop.utils"
       },
       {
         "source": "shop.dupes",
@@ -19,7 +39,19 @@
       },
       {
         "source": "shop.lazy",
+        "target": "shop"
+      },
+      {
+        "source": "shop.lazy",
+        "target": "shop.services"
+      },
+      {
+        "source": "shop.lazy",
         "target": "shop.services.pricing"
+      },
+      {
+        "source": "shop.legacy",
+        "target": "shop"
       },
       {
         "source": "shop.legacy",
@@ -27,7 +59,19 @@
       },
       {
         "source": "shop.main",
+        "target": "shop"
+      },
+      {
+        "source": "shop.main",
+        "target": "shop.services"
+      },
+      {
+        "source": "shop.main",
         "target": "shop.services.orders"
+      },
+      {
+        "source": "shop.main",
+        "target": "shop.utils"
       },
       {
         "source": "shop.main",
@@ -35,7 +79,19 @@
       },
       {
         "source": "shop.models.order",
+        "target": "shop"
+      },
+      {
+        "source": "shop.models.order",
+        "target": "shop.utils"
+      },
+      {
+        "source": "shop.models.order",
         "target": "shop.utils.helpers"
+      },
+      {
+        "source": "shop.services",
+        "target": "shop"
       },
       {
         "source": "shop.services",
@@ -43,7 +99,19 @@
       },
       {
         "source": "shop.services.orders",
+        "target": "shop"
+      },
+      {
+        "source": "shop.services.orders",
+        "target": "shop.models"
+      },
+      {
+        "source": "shop.services.orders",
         "target": "shop.models.order"
+      },
+      {
+        "source": "shop.services.orders",
+        "target": "shop.services"
       },
       {
         "source": "shop.services.orders",
@@ -51,7 +119,19 @@
       },
       {
         "source": "shop.services.pricing",
+        "target": "shop"
+      },
+      {
+        "source": "shop.services.pricing",
+        "target": "shop.models"
+      },
+      {
+        "source": "shop.services.pricing",
         "target": "shop.models.order"
+      },
+      {
+        "source": "shop.services.pricing",
+        "target": "shop.utils"
       },
       {
         "source": "shop.services.pricing",
@@ -60,7 +140,7 @@
     ],
     "nodes": [
       {
-        "dependency_count": 1,
+        "dependency_count": 2,
         "dependent_count": 0,
         "has_scan_error": false,
         "id": "manage",
@@ -69,7 +149,7 @@
       },
       {
         "dependency_count": 0,
-        "dependent_count": 0,
+        "dependent_count": 11,
         "has_scan_error": false,
         "id": "shop",
         "is_package": true,
@@ -84,7 +164,7 @@
         "path": "shop/broken.py"
       },
       {
-        "dependency_count": 1,
+        "dependency_count": 2,
         "dependent_count": 1,
         "has_scan_error": false,
         "id": "shop.cycle_a",
@@ -92,7 +172,7 @@
         "path": "shop/cycle_a.py"
       },
       {
-        "dependency_count": 1,
+        "dependency_count": 2,
         "dependent_count": 1,
         "has_scan_error": false,
         "id": "shop.cycle_b",
@@ -100,7 +180,7 @@
         "path": "shop/cycle_b.py"
       },
       {
-        "dependency_count": 1,
+        "dependency_count": 3,
         "dependent_count": 0,
         "has_scan_error": false,
         "id": "shop.dupes",
@@ -108,7 +188,7 @@
         "path": "shop/dupes.py"
       },
       {
-        "dependency_count": 1,
+        "dependency_count": 3,
         "dependent_count": 0,
         "has_scan_error": false,
         "id": "shop.lazy",
@@ -116,7 +196,7 @@
         "path": "shop/lazy.py"
       },
       {
-        "dependency_count": 1,
+        "dependency_count": 2,
         "dependent_count": 0,
         "has_scan_error": false,
         "id": "shop.legacy",
@@ -124,7 +204,7 @@
         "path": "shop/legacy.py"
       },
       {
-        "dependency_count": 2,
+        "dependency_count": 5,
         "dependent_count": 1,
         "has_scan_error": false,
         "id": "shop.main",
@@ -133,14 +213,14 @@
       },
       {
         "dependency_count": 0,
-        "dependent_count": 0,
+        "dependent_count": 2,
         "has_scan_error": false,
         "id": "shop.models",
         "is_package": true,
         "path": "shop/models/__init__.py"
       },
       {
-        "dependency_count": 1,
+        "dependency_count": 3,
         "dependent_count": 2,
         "has_scan_error": false,
         "id": "shop.models.order",
@@ -148,15 +228,15 @@
         "path": "shop/models/order.py"
       },
       {
-        "dependency_count": 1,
-        "dependent_count": 0,
+        "dependency_count": 2,
+        "dependent_count": 3,
         "has_scan_error": false,
         "id": "shop.services",
         "is_package": true,
         "path": "shop/services/__init__.py"
       },
       {
-        "dependency_count": 2,
+        "dependency_count": 5,
         "dependent_count": 2,
         "has_scan_error": false,
         "id": "shop.services.orders",
@@ -164,7 +244,7 @@
         "path": "shop/services/orders.py"
       },
       {
-        "dependency_count": 2,
+        "dependency_count": 5,
         "dependent_count": 2,
         "has_scan_error": false,
         "id": "shop.services.pricing",
@@ -173,7 +253,7 @@
       },
       {
         "dependency_count": 0,
-        "dependent_count": 1,
+        "dependent_count": 5,
         "has_scan_error": false,
         "id": "shop.utils",
         "is_package": true,
@@ -190,7 +270,7 @@
     ],
     "repository": "sample_python_project",
     "summary": {
-      "edges": 14,
+      "edges": 34,
       "external_imports": 6,
       "modules": 16,
       "scan_errors": 1,

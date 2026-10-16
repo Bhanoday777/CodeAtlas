@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import type { ImpactResponse } from '../types/api'
-import { distanceBucket, groupByDistance, impactHighlight, pathEdgeIds } from './impact'
+import { distanceBucket, groupByDistance, impactHighlight, pathEdgeIds, stepVerb } from './impact'
 
-// The README's example: GET /api/impact/shop.services.pricing on the fixture.
+// GET /api/impact/shop.services.pricing on the fixture (contract/fixture/impact--shop.services.pricing.json).
 const PRICING: ImpactResponse = {
   changed_module: 'shop.services.pricing',
   affected: [
@@ -115,5 +115,20 @@ describe('impactHighlight', () => {
     expect(highlight.ready).toBe(true)
     expect(highlight.buckets.size).toBe(0)
     expect(highlight.pathEdges.size).toBe(0)
+  })
+})
+
+describe('stepVerb', () => {
+  // clusterOf maps a package's own __init__ to itself, a plain module to its package.
+  const packages = { clusterOf: new Map<string, string | null>([['shop', 'shop'], ['shop.models', 'shop.models'], ['shop.models.order', 'shop.models'], ['manage', null]]) }
+
+  it('says "imports from" for a package, since the edge may come from a module inside it', () => {
+    expect(stepVerb('shop.models', packages)).toBe('imports from')
+    expect(stepVerb('shop', packages)).toBe('imports from')
+  })
+
+  it('says "imports" for a plain module', () => {
+    expect(stepVerb('shop.models.order', packages)).toBe('imports')
+    expect(stepVerb('manage', packages)).toBe('imports')
   })
 })

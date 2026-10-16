@@ -25,12 +25,8 @@ export function WorkspaceHeader({ repository, apiStatus, apiBaseUrl, onOpenSearc
           <FolderIcon />
         </div>
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-[12px] text-faint">
-            <span>CodeAtlas</span>
-            <span aria-hidden="true">/</span>
-            <span>Graph Explorer</span>
-          </div>
-          <h1 className="truncate text-[16px] leading-tight font-semibold tracking-tight">
+          <div className="text-sm text-faint">CodeAtlas</div>
+          <h1 className="truncate text-lg leading-tight font-semibold tracking-tight">
             {repository ?? (
               <span className="text-muted">{apiStatus === 'loading' ? 'Loading repository…' : 'Repository unavailable'}</span>
             )}
@@ -43,22 +39,22 @@ export function WorkspaceHeader({ repository, apiStatus, apiBaseUrl, onOpenSearc
           <button
             type="button"
             onClick={onOpenSearch}
-            className="hidden h-8 w-64 items-center gap-2 rounded-lg border border-line-strong bg-raised px-2.5 text-[13px] text-faint transition-colors hover:border-faint/60 hover:text-muted sm:flex"
+            className="hidden h-8 w-64 items-center gap-2 rounded-lg border border-line-strong bg-raised px-2.5 text-base text-faint transition-colors hover:border-faint/60 hover:text-muted sm:flex"
           >
             <SearchIcon />
             <span>Jump to module…</span>
-            <kbd className="ml-auto rounded border border-line-strong bg-surface px-1.5 text-[10px] text-muted">Ctrl K</kbd>
+            <kbd className="ml-auto rounded border border-line-strong bg-surface px-1.5 text-2xs text-muted">Ctrl K</kbd>
           </button>
         )}
         <div
-          className="flex h-8 items-center gap-2 rounded-lg border border-line px-2.5 text-[12px] text-muted"
+          className="flex h-8 items-center gap-2 rounded-lg border border-line px-2.5 text-sm text-muted"
           title={`API: ${apiBaseUrl}`}
         >
           <span className={`size-1.5 rounded-full ${status.dot}`} aria-hidden="true" />
           <span>
             API <span className="text-ink">{status.label}</span>
           </span>
-          <span className="hidden font-mono text-[11px] text-faint lg:inline">{apiBaseUrl.replace(/^https?:\/\//, '')}</span>
+          <span className="hidden font-mono text-xs text-faint lg:inline">{apiBaseUrl.replace(/^https?:\/\//, '')}</span>
         </div>
       </div>
     </header>

@@ -4,7 +4,8 @@ Conventions shared by every endpoint:
 - Module IDs are dotted Python names ("shop.models.order"). In URLs they are
   sent percent-encoded (encodeURIComponent on the frontend); plain ASCII IDs
   are unchanged by that, and FastAPI decodes them before lookup.
-- An edge {source, target} means source imports target.
+- An edge {source, target} means source depends on target: it imports target,
+  or a module inside package target (whose __init__.py Python runs first).
 - Every list is sorted, so identical scans give identical responses.
 """
 

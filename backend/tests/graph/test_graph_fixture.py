@@ -29,7 +29,7 @@ def test_graph_has_every_scanned_module_and_local_edge(scan, graph):
     assert set(graph.modules) == set(scan.modules)
     assert set(graph.edges) == scan.local_edges()
     assert len(graph.modules) == 16
-    assert len(graph.edges) == 14
+    assert len(graph.edges) == 34  # 14 from import statements + 20 to parent packages
 
 
 def test_module_with_syntax_error_is_an_isolated_node(graph):
@@ -95,8 +95,31 @@ def test_fixture_cycle(graph):
     ("changed", "expected"),
     [
         ("manage", set()),  # entry point: nothing imports it
-        ("shop.utils", {"shop.legacy"}),  # package __init__, not its submodule helpers
-        ("shop", set()),
+        # A package's __init__ affects everything that imports it or anything inside it.
+        (
+            "shop.utils",
+            {
+                "shop.legacy", "shop.dupes", "shop.main", "shop.models.order", "shop.services.pricing",
+                "manage", "shop.lazy", "shop.services.orders", "shop.services",
+            },
+        ),
+        (
+            "shop",
+            {
+                "manage", "shop.cycle_a", "shop.cycle_b", "shop.dupes", "shop.lazy", "shop.legacy",
+                "shop.main", "shop.models.order", "shop.services", "shop.services.orders",
+                "shop.services.pricing",
+            },
+        ),
+        # Nothing imports shop.models by name; its importers come from `from ..models import order`.
+        (
+            "shop.models",
+            {"shop.services.orders", "shop.services.pricing", "shop.lazy", "shop.main", "shop.services", "manage"},
+        ),
+        # shop.services <-> shop.services.orders is a cycle (an import one way, a parent
+        # edge back): neither is in its own result.
+        ("shop.services", {"shop.lazy", "shop.main", "shop.services.orders", "manage"}),
+        ("shop.services.orders", {"shop.main", "shop.services", "shop.lazy", "manage"}),
         ("shop.legacy", set()),
     ],
 )
@@ -129,7 +152,7 @@ def test_impact_matches_forward_reachability_for_every_module(graph):
 def test_cli_impact_report(capsys):
     assert main([str(FIXTURE_ROOT), "shop.models.order"]) == 0
     out = capsys.readouterr().out
-    assert "16 modules, 14 edges, 1 scan errors" in out
+    assert "16 modules, 34 edges, 1 scan errors" in out
     assert "May be affected (6: 2 direct, 4 transitive)" in out
     assert "[3] manage" in out
     assert "manage -> shop.main -> shop.services.orders -> shop.models.order" in out
@@ -150,3 +173,23 @@ def test_cli_unknown_module_fails(capsys):
 def test_cli_usage_error(capsys):
     assert main([]) == 2
     assert "usage:" in capsys.readouterr().err
+
+
+def test_cli_missing_repository_fails_without_traceback(tmp_path, capsys):
+    assert main([str(tmp_path / "missing"), "shop"]) == 1
+    assert "error: Repository root is not a directory" in capsys.readouterr().err
+
+
+def test_parent_package_explanation_paths(graph):
+    # manage imports shop.main, which runs shop/__init__.py: a direct edge to shop.
+    report = graph.impact("shop.models")
+    assert report.direct == (
+        AffectedModule("shop.services.orders", 1, ("shop.services.orders", "shop.models")),
+        AffectedModule("shop.services.pricing", 1, ("shop.services.pricing", "shop.models")),
+    )
+    assert AffectedModule("manage", 3, ("manage", "shop.main", "shop.services.orders", "shop.models")) in report.affected
+    assert graph.explanation_path("manage", "shop") == ("manage", "shop")
+    # Every step of every path is a real edge.
+    edges = set(graph.edges)
+    for module in report.affected:
+        assert all(step in edges for step in zip(module.path, module.path[1:]))

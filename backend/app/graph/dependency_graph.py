@@ -1,6 +1,7 @@
 """Directed module dependency graph and change-impact analysis.
 
-Edge convention (same as the parser): (A, B) means module A imports module B.
+Edge convention (same as the parser): (A, B) means module A depends on module B:
+A imports B, or a module inside package B (see ScanResult.local_edges).
 
 The graph keeps every edge in two adjacency lists, one per direction:
 
@@ -83,7 +84,7 @@ class ImpactReport:
 
 
 class DependencyGraph:
-    """Immutable directed graph of local module imports."""
+    """Immutable directed graph of local module dependencies."""
 
     def __init__(self, modules: Iterable[str], edges: Iterable[tuple[str, str]]) -> None:
         """Build the graph. Every module becomes a node, even with no edges.

@@ -91,11 +91,12 @@ function App() {
             {graph.error.kind === 'network' && (
               <p className="mt-2">
                 Start the backend with{' '}
-                <code className="rounded bg-raised px-1 py-0.5 font-mono text-[12px] text-ink">
+                <code className="rounded bg-raised px-1 py-0.5 font-mono text-sm text-ink">
                   .venv/Scripts/python -m uvicorn app.main:app
                 </code>{' '}
-                from <code className="font-mono text-[12px] text-ink">backend/</code>, and open this page at{' '}
-                <code className="font-mono text-[12px] text-ink">http://localhost:5173</code> (the origin the API allows).
+                (macOS/Linux: <code className="font-mono text-sm text-ink">.venv/bin/python</code>) from{' '}
+                <code className="font-mono text-sm text-ink">backend/</code>, and open this page at{' '}
+                <code className="font-mono text-sm text-ink">http://localhost:5173</code> (the origin the API allows).
               </p>
             )}
           </StatusMessage>
@@ -232,6 +233,7 @@ function GraphWorkspace({ graph, packages, selectedId, onSelect, impact, onAnaly
       <div className="order-3 min-h-0 border-line bg-surface max-lg:border-t lg:border-l">
         {changedId !== null ? (
           <ImpactReport
+            repository={graph.repository}
             changedId={changedId}
             report={report}
             focusedId={focusedId}
@@ -251,7 +253,7 @@ function GraphWorkspace({ graph, packages, selectedId, onSelect, impact, onAnaly
 /** Floating reminder on the canvas that the graph shows impact, not the normal selection. */
 function ImpactBanner({ changedId, affected, onExit }: { changedId: string; affected: number | null; onExit: () => void }) {
   return (
-    <div className="absolute top-3 left-3 flex max-w-[calc(100%-5rem)] animate-fade-in items-center gap-2.5 rounded-lg border border-impact/40 bg-surface/90 py-1.5 pr-1.5 pl-3 text-[12px] shadow-(--shadow-float) backdrop-blur-md">
+    <div className="absolute top-3 left-3 flex max-w-[calc(100%-5rem)] animate-fade-in items-center gap-2.5 rounded-lg border border-impact/40 bg-surface/90 py-1.5 pr-1.5 pl-3 text-sm shadow-(--shadow-float) backdrop-blur-md">
       <span className="size-2 shrink-0 rounded-full bg-impact" aria-hidden="true" />
       <span className="min-w-0 truncate text-muted">
         Impact of <span className="font-medium text-ink">{shortLabel(changedId)}</span>
@@ -267,7 +269,7 @@ function ImpactBanner({ changedId, affected, onExit }: { changedId: string; affe
         onClick={onExit}
         className="shrink-0 rounded-md px-2 py-0.5 text-muted transition-colors hover:bg-hover hover:text-ink"
       >
-        Exit <kbd className="text-[10px] text-faint">Esc</kbd>
+        Exit <kbd className="text-2xs text-faint">Esc</kbd>
       </button>
     </div>
   )

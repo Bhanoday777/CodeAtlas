@@ -102,11 +102,15 @@ export function DependencyGraph({ graph, packages, selectedId, impact, onSelect 
       setHovered(event.target.data() as ModuleNodeData)
       container.style.cursor = 'pointer'
     })
-    cy.on('mouseout', 'node.module', (event) => {
-      event.target.removeClass('hovered')
+    const clearHover = () => {
+      cy.nodes('.hovered').removeClass('hovered')
       setHovered(null)
       container.style.cursor = ''
-    })
+    }
+    cy.on('mouseout', 'node.module', clearHover)
+    // Moving from a node straight onto an overlay (controls, legend) leaves the canvas
+    // without a node mouseout, so the hover card would stay open.
+    container.addEventListener('mouseleave', clearHover)
 
     // The canvas measures labels with the web fonts; redraw once they have loaded.
     document.fonts?.ready.then(() => {
@@ -119,6 +123,7 @@ export function DependencyGraph({ graph, packages, selectedId, impact, onSelect 
 
     return () => {
       cancelAnimationFrame(frame)
+      container.removeEventListener('mouseleave', clearHover)
       observer.disconnect()
       cy.destroy()
       cyRef.current = null
@@ -231,6 +236,9 @@ export function DependencyGraph({ graph, packages, selectedId, impact, onSelect 
     const cy = cyRef.current
     if (!cy) return
     cy.stop()
+    // The layout moves nodes out from under the cursor without a mouseout.
+    cy.nodes('.hovered').removeClass('hovered')
+    setHovered(null)
     cy.layout(layoutOptions).run()
     onSelectRef.current(null)
   }
@@ -265,10 +273,10 @@ function HoverCard({ node }: { node: ModuleNodeData }) {
     <div className="pointer-events-none absolute bottom-3 left-3 max-w-[min(360px,calc(100%-1.5rem))] animate-fade-in rounded-lg border border-line-strong bg-surface/90 px-3 py-2 shadow-(--shadow-float) backdrop-blur-md">
       <div className="flex items-center gap-2">
         <span className="size-2 shrink-0 rounded-full" style={{ background: node.color }} aria-hidden="true" />
-        <span className="truncate font-mono text-[12px] text-ink">{node.id}</span>
+        <span className="truncate font-mono text-sm text-ink">{node.id}</span>
       </div>
-      <div className="mt-0.5 truncate pl-4 font-mono text-[11px] text-faint">{node.path}</div>
-      <div className="mt-1.5 flex gap-3 pl-4 text-[11px] text-muted">
+      <div className="mt-0.5 truncate pl-4 font-mono text-xs text-faint">{node.path}</div>
+      <div className="mt-1.5 flex gap-3 pl-4 text-xs text-muted">
         <span>
           <span className="text-accent">→</span> imports {node.dependencyCount}
         </span>

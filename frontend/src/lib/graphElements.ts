@@ -55,7 +55,7 @@ export function clusterNodeId(packageId: string): string {
  * Converts the API graph into Cytoscape elements: package boxes (compound nodes),
  * one node per module inside its package box, and one edge per import.
  *
- * Edge direction is kept exactly as the API sends it: source imports target.
+ * Edge direction is kept exactly as the API sends it: source depends on target.
  * The API never sends duplicate edges; if it did, the repeat is skipped, because
  * Cytoscape rejects two elements with the same ID.
  */

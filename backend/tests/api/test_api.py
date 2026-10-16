@@ -18,20 +18,42 @@ from app.parser.scanner import scan_repository
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[3] / "fixtures" / "sample_python_project"
 
+# Sorted, as the API sends them: 14 from import statements, 20 to parent packages
+# (hand-written in tests/parser/test_scan_fixture.py).
 FIXTURE_EDGES = [
+    ("manage", "shop"),
     ("manage", "shop.main"),
+    ("shop.cycle_a", "shop"),
     ("shop.cycle_a", "shop.cycle_b"),
+    ("shop.cycle_b", "shop"),
     ("shop.cycle_b", "shop.cycle_a"),
+    ("shop.dupes", "shop"),
+    ("shop.dupes", "shop.utils"),
     ("shop.dupes", "shop.utils.helpers"),
+    ("shop.lazy", "shop"),
+    ("shop.lazy", "shop.services"),
     ("shop.lazy", "shop.services.pricing"),
+    ("shop.legacy", "shop"),
     ("shop.legacy", "shop.utils"),
+    ("shop.main", "shop"),
+    ("shop.main", "shop.services"),
     ("shop.main", "shop.services.orders"),
+    ("shop.main", "shop.utils"),
     ("shop.main", "shop.utils.helpers"),
+    ("shop.models.order", "shop"),
+    ("shop.models.order", "shop.utils"),
     ("shop.models.order", "shop.utils.helpers"),
+    ("shop.services", "shop"),
     ("shop.services", "shop.services.orders"),
+    ("shop.services.orders", "shop"),
+    ("shop.services.orders", "shop.models"),
     ("shop.services.orders", "shop.models.order"),
+    ("shop.services.orders", "shop.services"),
     ("shop.services.orders", "shop.services.pricing"),
+    ("shop.services.pricing", "shop"),
+    ("shop.services.pricing", "shop.models"),
     ("shop.services.pricing", "shop.models.order"),
+    ("shop.services.pricing", "shop.utils"),
     ("shop.services.pricing", "shop.utils.helpers"),
 ]
 
@@ -73,7 +95,7 @@ def test_health(client):
         "status": "ok",
         "repository": "sample_python_project",
         "module_count": 16,
-        "edge_count": 14,
+        "edge_count": 34,
     }
 
 
@@ -86,7 +108,7 @@ def test_graph_edges_and_summary(client):
     assert body["edges"] == [{"source": a, "target": b} for a, b in FIXTURE_EDGES]
     assert body["summary"] == {
         "modules": 16,
-        "edges": 14,
+        "edges": 34,
         "external_imports": 6,
         "unresolved_imports": 3,
         "scan_errors": 1,
@@ -104,14 +126,14 @@ def test_graph_nodes(client):
         "is_package": True,
         "has_scan_error": False,
         "dependency_count": 0,
-        "dependent_count": 0,
+        "dependent_count": 2,  # shop.services.orders and .pricing import modules inside it
     }
     assert nodes["shop.models.order"] == {
         "id": "shop.models.order",
         "path": "shop/models/order.py",
         "is_package": False,
         "has_scan_error": False,
-        "dependency_count": 1,
+        "dependency_count": 3,
         "dependent_count": 2,
     }
     assert nodes["shop.broken"]["has_scan_error"] is True
@@ -129,7 +151,7 @@ def test_module_detail(client):
         "path": "shop/models/order.py",
         "is_package": False,
         "has_scan_error": False,
-        "dependencies": ["shop.utils.helpers"],
+        "dependencies": ["shop", "shop.utils", "shop.utils.helpers"],
         "dependents": ["shop.services.orders", "shop.services.pricing"],
         "external_imports": [{"raw": "from dataclasses import dataclass", "lineno": 1}],
         "unresolved_imports": [],
@@ -138,7 +160,7 @@ def test_module_detail(client):
 
 def test_module_detail_with_unresolved_imports(client):
     body = client.get("/api/modules/shop.legacy").json()
-    assert body["dependencies"] == ["shop.utils"]
+    assert body["dependencies"] == ["shop", "shop.utils"]
     assert body["dependents"] == []
     assert body["unresolved_imports"] == [
         {"raw": "import shop.missing_module", "lineno": 1},

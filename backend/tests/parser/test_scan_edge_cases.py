@@ -27,7 +27,8 @@ def test_self_imports_are_resolved_but_not_edges(tmp_path):
         "pkg/user.py": "from pkg import selfref\n",
     }))
 
-    assert scan.local_edges() == {("pkg.user", "pkg.selfref")}
+    # pkg.user also depends on pkg (parent package); the self-import adds nothing.
+    assert scan.local_edges() == {("pkg.user", "pkg.selfref"), ("pkg.user", "pkg")}
     # The import records themselves are still reported as local, not hidden.
     assert kinds(scan, "pkg") == [("from . import helper_name", ImportKind.LOCAL)]
     assert kinds(scan, "pkg.selfref") == [("import pkg.selfref", ImportKind.LOCAL)]
@@ -45,7 +46,7 @@ def test_type_checking_imports_are_included(tmp_path):
         ),
     }))
 
-    assert scan.local_edges() == {("pkg.service", "pkg.models")}
+    assert scan.local_edges() == {("pkg.service", "pkg.models"), ("pkg.service", "pkg")}
 
 
 def test_aliased_imports_resolve_to_the_real_module(tmp_path):
@@ -55,7 +56,7 @@ def test_aliased_imports_resolve_to_the_real_module(tmp_path):
         "app.py": "import pkg.core as c\nfrom pkg import core as k\n",
     }))
 
-    assert scan.local_edges() == {("app", "pkg.core")}
+    assert scan.local_edges() == {("app", "pkg.core"), ("app", "pkg")}
 
 
 def test_deep_relative_imports(tmp_path):
@@ -71,7 +72,7 @@ def test_deep_relative_imports(tmp_path):
         ),
     }))
 
-    assert scan.local_edges() == {("a.b.c.leaf", "a.top")}
+    assert scan.local_edges() == {("a.b.c.leaf", "a.top"), ("a.b.c.leaf", "a")}
     assert kinds(scan, "a.b.c.leaf")[2] == ("from .... import beyond", ImportKind.UNRESOLVED)
 
 
@@ -93,7 +94,7 @@ def test_partially_unresolvable_repo_keeps_resolvable_edges(tmp_path):
         "pkg/broken.py": "def (:\n",
     }))
 
-    assert scan.local_edges() == {("pkg.mixed", "pkg.ok")}
+    assert scan.local_edges() == {("pkg.mixed", "pkg.ok"), ("pkg.mixed", "pkg")}
     assert [k for _, k in kinds(scan, "pkg.mixed")] == [
         ImportKind.LOCAL, ImportKind.UNRESOLVED, ImportKind.UNRESOLVED, ImportKind.EXTERNAL,
     ]
@@ -118,3 +119,104 @@ def test_submodule_of_namespace_package_resolves(tmp_path):
     }))
 
     assert scan.local_edges() == {("app", "nspkg.mod")}
+
+
+@pytest.mark.parametrize("error", [RecursionError, MemoryError])
+def test_file_too_complex_to_parse_is_a_scan_error(tmp_path, monkeypatch, error):
+    # ast.parse raises these for deeply nested source (e.g. generated code). The parser
+    # is made to raise them on one file, so the test never builds such a file.
+    from app.parser import scanner
+
+    root = make_repo(
+        tmp_path,
+        {"app/__init__.py": "", "app/deep.py": "x = 1\n", "app/a.py": "from app import b\n", "app/b.py": ""},
+    )
+    real_extract = scanner.extract_imports
+
+    def extract(source, filename="<unknown>"):
+        if filename == "app/deep.py":
+            raise error("too deeply nested")
+        return real_extract(source, filename=filename)
+
+    monkeypatch.setattr(scanner, "extract_imports", extract)
+    scan = scan_repository(root)
+
+    assert [(e.path, e.message) for e in scan.errors] == [
+        ("app/deep.py", f"{error.__name__}: source is too complex to parse")
+    ]
+    assert "app.deep" in scan.modules
+    assert scan.local_edges() == {("app.a", "app.b"), ("app.a", "app")}
+
+
+# --- Parent packages ------------------------------------------------------------
+# `import a.b.c` runs a/__init__.py and a/b/__init__.py before a/b/c.py, so the
+# importer also depends on every enclosing package that exists in the repository.
+
+
+def test_importing_a_submodule_depends_on_its_parent_packages(tmp_path):
+    root = make_repo(
+        tmp_path,
+        {
+            "shop/__init__.py": "",
+            "shop/models/__init__.py": "",
+            "shop/models/order.py": "",
+            "main.py": "import shop.models.order\n",
+        },
+    )
+    assert scan_repository(root).local_edges() == {
+        ("main", "shop.models.order"),
+        ("main", "shop.models"),
+        ("main", "shop"),
+    }
+
+
+def test_parent_edges_for_relative_and_from_imports(tmp_path):
+    root = make_repo(
+        tmp_path,
+        {
+            "app/__init__.py": "",
+            "app/core/__init__.py": "",
+            "app/core/a.py": "from . import b\nfrom app.core.b import thing\n",
+            "app/core/b.py": "",
+        },
+    )
+    # Both imports reach app.core.b, so each parent edge appears once.
+    assert scan_repository(root).local_edges() == {
+        ("app.core.a", "app.core.b"),
+        ("app.core.a", "app.core"),
+        ("app.core.a", "app"),
+    }
+
+
+def test_parent_edges_skip_missing_packages_and_the_importer_itself(tmp_path):
+    root = make_repo(
+        tmp_path,
+        {
+            # ns/ has no __init__.py: a namespace package with no code to run, so no node and no edge.
+            "ns/pkg/__init__.py": "from .mod import x\n",
+            "ns/pkg/mod.py": "",
+            "main.py": "import ns.pkg.mod\n",
+        },
+    )
+    # ns.pkg importing its own submodule does not get an edge to itself.
+    assert scan_repository(root).local_edges() == {
+        ("ns.pkg", "ns.pkg.mod"),
+        ("main", "ns.pkg.mod"),
+        ("main", "ns.pkg"),
+    }
+
+
+def test_module_shadowing_a_folder_is_not_a_parent_package(tmp_path):
+    # app.utils is the plain module app/utils.py, not a package, so importing
+    # app.utils.x (from the folder app/utils/) does not run it. Only modules from an
+    # __init__.py count as parent packages.
+    root = make_repo(
+        tmp_path,
+        {
+            "app/__init__.py": "",
+            "app/utils.py": "",
+            "app/utils/x.py": "",
+            "main.py": "import app.utils.x\n",
+        },
+    )
+    assert scan_repository(root).local_edges() == {("main", "app.utils.x"), ("main", "app")}

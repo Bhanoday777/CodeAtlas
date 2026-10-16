@@ -1,6 +1,7 @@
 {
   "body": {
     "dependencies": [
+      "shop",
       "shop.main"
     ],
     "dependents": [],

@@ -20,7 +20,7 @@ export function GraphControls({ zoomPercent, onZoomIn, onZoomOut, onFit, onReset
       <ControlButton label="Zoom in" onClick={onZoomIn}>
         <ZoomInIcon />
       </ControlButton>
-      <div className="border-b border-line py-1 text-center font-mono text-[10px] text-faint tabular-nums" aria-live="polite">
+      <div className="border-b border-line py-1 text-center font-mono text-2xs text-faint tabular-nums" aria-live="polite">
         {zoomPercent}%
       </div>
       <ControlButton label="Zoom out" onClick={onZoomOut}>

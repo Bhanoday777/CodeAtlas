@@ -104,6 +104,14 @@ export function CloseIcon(props: IconProps) {
   )
 }
 
+export function DownloadIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M8 2.5v7.5M4.5 6.5 8 10l3.5-3.5M3 13h10" />
+    </Icon>
+  )
+}
+
 export function ArrowRightIcon(props: IconProps) {
   return (
     <Icon {...props}>

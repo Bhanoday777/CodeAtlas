@@ -80,22 +80,22 @@ export function ModuleExplorer({ nodes, packages, selectedId, onSelect }: Module
             placeholder="Filter modules or paths"
             spellCheck={false}
             autoComplete="off"
-            className="h-8 w-full rounded-lg border border-line-strong bg-raised pr-2.5 pl-8 text-[13px] text-ink transition-colors placeholder:text-faint focus:border-accent/70 focus:bg-surface focus:outline-none"
+            className="h-8 w-full rounded-lg border border-line-strong bg-raised pr-2.5 pl-8 text-base text-ink transition-colors placeholder:text-faint focus:border-accent/70 focus:bg-surface focus:outline-none"
           />
         </label>
-        <p className="mt-2 flex justify-between text-[11px] text-faint" aria-live="polite">
-          <span>{searching ? `${matches.length} of ${nodes.length} match` : `${nodes.length} modules`}</span>
-          <span>{packages.clusters.length} packages</span>
+        <p className="mt-2 flex justify-between text-xs text-faint" aria-live="polite">
+          <span>{searching ? `${matches.length} of ${nodes.length} match` : count(nodes.length, 'module')}</span>
+          <span>{count(packages.clusters.length, 'package')}</span>
         </p>
         {matches.length > MAX_ROWS && (
-          <p className="mt-1 text-[11px] text-warn">Showing the first {MAX_ROWS}. Refine the filter.</p>
+          <p className="mt-1 text-xs text-warn">Showing the first {MAX_ROWS}. Refine the filter.</p>
         )}
       </div>
 
       {matches.length === 0 ? (
         <div className="px-4 py-10 text-center">
-          <p className="text-[13px] text-muted">No modules match “{query.trim()}”.</p>
-          <p className="mt-1 text-[12px] text-faint">The filter matches dotted module names and file paths.</p>
+          <p className="text-base text-muted">No modules match “{query.trim()}”.</p>
+          <p className="mt-1 text-sm text-faint">The filter matches dotted module names and file paths.</p>
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto pb-2">
@@ -115,8 +115,8 @@ export function ModuleExplorer({ nodes, packages, selectedId, onSelect }: Module
                     <path d="M2.5 1 6 4 2.5 7" fill="none" stroke="currentColor" strokeWidth="1.4" />
                   </svg>
                   <span className="size-2 shrink-0 rounded-full" style={{ background: group.color }} aria-hidden="true" />
-                  <span className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-muted">{group.label}</span>
-                  <span className="font-mono text-[10.5px] text-faint">{group.modules.length}</span>
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted">{group.label}</span>
+                  <span className="font-mono text-2xs text-faint">{group.modules.length}</span>
                 </button>
                 {open && (
                   <ul className="py-0.5">
@@ -140,6 +140,10 @@ export function ModuleExplorer({ nodes, packages, selectedId, onSelect }: Module
   )
 }
 
+function count(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`
+}
+
 interface ModuleRowProps {
   node: GraphNode
   selected: boolean
@@ -161,15 +165,15 @@ function ModuleRow({ node, selected, buttonRef, onSelect }: ModuleRowProps) {
         }`}
       >
         {selected && <span className="absolute inset-y-1 left-0 w-0.5 rounded-r bg-accent" aria-hidden="true" />}
-        <span className={`min-w-0 flex-1 truncate text-[13px] ${selected ? 'font-medium text-accent-ink' : 'text-ink'}`}>
+        <span className={`min-w-0 flex-1 truncate text-base ${selected ? 'font-medium text-accent-ink' : 'text-ink'}`}>
           {node.is_package ? <span className="text-muted">__init__</span> : shortLabel(node.id)}
         </span>
         {node.has_scan_error && (
-          <span className="rounded border border-danger/40 px-1 font-mono text-[10px] leading-4 text-danger">error</span>
+          <span className="rounded border border-danger/40 px-1 font-mono text-2xs leading-4 text-danger">error</span>
         )}
         {node.dependent_count > 0 && (
           <span
-            className="font-mono text-[10.5px] text-faint tabular-nums"
+            className="font-mono text-2xs text-faint tabular-nums"
             title={`Imported by ${node.dependent_count} ${node.dependent_count === 1 ? 'module' : 'modules'}`}
           >
             ←{node.dependent_count}

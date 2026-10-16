@@ -1,7 +1,7 @@
 // Change-impact workflows on the fixture repository. Expected reports were checked
 // against the running API and `python -m app.graph` (and match contract/fixture/impact--*.json).
 
-import { expect, test } from '@playwright/test'
+import { expect, test, type Download } from '@playwright/test'
 
 import { detailsPanel, distanceRows, expectGroups, impactReport, jumpTo, openApp } from './helpers.ts'
 
@@ -102,3 +102,58 @@ test('the caveat links to the diagnostics drawer', async ({ page }) => {
   await expect(drawer).toBeHidden()
   await expect(impactReport(page, PRICING)).toBeVisible()
 })
+
+test('a package is affected through modules inside it, and its path step reads "imports from"', async ({ page }) => {
+  // Nothing imports shop.models by name; orders and pricing import shop.models.order,
+  // which runs shop/models/__init__.py first.
+  const MODELS = 'shop.models'
+  await jumpTo(page, 'models', { impact: true })
+  await expectGroups(page, MODELS, [
+    ['shop.services.orders', 'shop.services.pricing'],
+    ['shop.lazy', 'shop.main', 'shop.services'],
+    ['manage'],
+  ])
+  await distanceRows(page, MODELS, 3).first().click()
+  await expect(impactReport(page, MODELS).getByRole('list', { name: 'Explanation path' }).getByRole('listitem')).toHaveText([
+    'manage',
+    'importsshop.main',
+    'importsshop.services.orders',
+    'imports fromshop.models',
+  ])
+})
+
+test('exports the loaded report as Markdown and JSON, caveats included', async ({ page }) => {
+  await jumpTo(page, 'pricing', { impact: true })
+  const report = impactReport(page, PRICING)
+
+  const [markdownDownload] = await Promise.all([
+    page.waitForEvent('download'),
+    report.getByRole('button', { name: 'Export report as Markdown' }).click(),
+  ])
+  expect(markdownDownload.suggestedFilename()).toBe('impact-shop.services.pricing.md')
+  const markdown = await readDownload(markdownDownload)
+  expect(markdown).toContain('# Change impact: `shop.services.pricing`')
+  expect(markdown).toContain('Repository: `sample_python_project`')
+  expect(markdown).toContain('**5** modules may be affected: 2 direct, 3 transitive.')
+  expect(markdown).toContain('## This list may be incomplete')
+  expect(markdown).toContain('| 3 | `manage` | `manage` → `shop.main` → `shop.services.orders` → `shop.services.pricing` |')
+
+  const [jsonDownload] = await Promise.all([
+    page.waitForEvent('download'),
+    report.getByRole('button', { name: 'Export report as JSON' }).click(),
+  ])
+  expect(jsonDownload.suggestedFilename()).toBe('impact-shop.services.pricing.json')
+  const exported = JSON.parse(await readDownload(jsonDownload))
+  // The exported report is exactly what the API returned.
+  const api = await (await page.request.get('http://127.0.0.1:8000/api/impact/shop.services.pricing')).json()
+  expect(exported.report).toEqual(api)
+  expect(exported.repository).toBe('sample_python_project')
+  expect(Number.isNaN(Date.parse(exported.exported_at))).toBe(false)
+})
+
+async function readDownload(download: Download): Promise<string> {
+  const stream = await download.createReadStream()
+  const chunks: Buffer[] = []
+  for await (const chunk of stream) chunks.push(chunk as Buffer)
+  return Buffer.concat(chunks).toString('utf-8')
+}

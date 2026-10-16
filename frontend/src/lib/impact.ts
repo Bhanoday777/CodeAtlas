@@ -1,5 +1,6 @@
 import type { AffectedModule, ImpactResponse } from '../types/api'
 import { edgeId } from './graphElements'
+import type { PackageModel } from './packages'
 
 /** Graph color bucket for a distance: 1, 2, and 3 for everything farther. */
 export type DistanceBucket = 1 | 2 | 3
@@ -24,7 +25,7 @@ export function groupByDistance(report: ImpactResponse): DistanceGroup[] {
   return [...groups.entries()].sort(([a], [b]) => a - b).map(([distance, modules]) => ({ distance, modules }))
 }
 
-/** Edge IDs along an explanation path. Each step imports the next, so path [a, b] is the edge a → b. */
+/** Edge IDs along an explanation path. Each step depends on the next, so path [a, b] is the edge a → b. */
 export function pathEdgeIds(path: readonly string[]): string[] {
   return path.slice(1).map((target, i) => edgeId(path[i], target))
 }
@@ -60,4 +61,13 @@ export function impactHighlight(changed: string, report: ImpactResponse | null, 
     if (module.id === focusedId) focus = { id: module.id, nodes: module.path, edges }
   }
   return { changed, ready: usable !== null, buckets, pathEdges, focus }
+}
+
+/**
+ * How one explanation-path step reads: "a imports b", or "a imports from b" when b is a
+ * package. A package edge can come from importing a module inside it, which runs the
+ * package's __init__.py first, so "imports b" would not always be literally true.
+ */
+export function stepVerb(target: string, packages: Pick<PackageModel, 'clusterOf'>): 'imports' | 'imports from' {
+  return packages.clusterOf.get(target) === target ? 'imports from' : 'imports'
 }

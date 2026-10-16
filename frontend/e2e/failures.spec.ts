@@ -14,7 +14,7 @@ test('backend unreachable: explains how to start it, and Retry recovers', async 
 
   await page.unroute('**/api/graph')
   await alert.getByRole('button', { name: 'Retry' }).click()
-  await expect(page.getByRole('img', { name: /16 modules, 14 import edges/ })).toBeVisible()
+  await expect(page.getByRole('img', { name: /16 modules, 34 import edges/ })).toBeVisible()
 })
 
 test('a response that breaks the API contract is reported, not drawn as an empty graph', async ({ page }) => {

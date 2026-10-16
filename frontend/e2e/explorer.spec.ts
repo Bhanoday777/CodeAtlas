@@ -2,7 +2,7 @@
 // against the running API (and match contract/fixture/*.json).
 //
 // The graph itself is a canvas: these tests reach modules through the list, the
-// palette and the panels. Clicking graph nodes is a manual check (README, Testing).
+// palette and the panels. Clicking graph nodes is a manual check (docs/ui.md, Testing the canvas).
 
 import { expect, test } from '@playwright/test'
 
@@ -18,7 +18,7 @@ test('shows the repository summary from the API', async ({ page }) => {
   // Each card reads: label, count, detail.
   await expect(summary.getByRole('listitem')).toHaveText([
     'Modules164 packages',
-    'Import edges14local module imports',
+    'Import edges34imports + parent packages',
     'External imports6stdlib + third-party',
     'Unresolved3look local, no match',
     'Scan errors1files not parsed',
@@ -27,7 +27,7 @@ test('shows the repository summary from the API', async ({ page }) => {
   await expect(summary.getByRole('button', { name: /^Unresolved: 3,/ })).toBeVisible()
   await expect(summary.getByRole('button', { name: /^Scan errors: 1,/ })).toBeVisible()
   await expect(summary.getByRole('button', { name: /^Warnings: 0,/ })).toBeVisible()
-  await expect(page.getByRole('img', { name: /16 modules, 14 import edges/ })).toBeVisible()
+  await expect(page.getByRole('img', { name: /16 modules, 34 import edges/ })).toBeVisible()
   await expect(detailsPanel(page).getByText('No module selected')).toBeVisible()
 })
 

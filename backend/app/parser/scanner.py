@@ -13,7 +13,8 @@ from app.parser.resolver import resolve_import
 def scan_repository(root: Path) -> ScanResult:
     """Statically scan every Python file under root. Never executes code.
 
-    A file that cannot be read or parsed is recorded in `errors` and still
+    A file that cannot be read or parsed (including source too deeply nested for
+    `ast`) is recorded in `errors` and still
     appears in `modules` (it exists and other files may import it); it simply
     contributes no outgoing imports.
     """
@@ -35,6 +36,12 @@ def scan_repository(root: Path) -> ScanResult:
             continue
         except (OSError, ValueError) as exc:
             result.errors.append(ScanError(info.path, f"{type(exc).__name__}: {exc}"))
+            continue
+        except (RecursionError, MemoryError) as exc:
+            # ast.parse raises these for very deeply nested source ("parser stack
+            # overflowed"). The parser's partial state is gone by now, so one such
+            # file is skipped like a syntax error instead of ending the whole scan.
+            result.errors.append(ScanError(info.path, f"{type(exc).__name__}: source is too complex to parse"))
             continue
 
         for record in records:
