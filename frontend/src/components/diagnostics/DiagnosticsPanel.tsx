@@ -34,7 +34,7 @@ export function DiagnosticsPanel({ open, onClose, onSelectModule }: DiagnosticsP
       className="fixed inset-y-0 right-0 z-30 flex w-full max-w-[440px] flex-col border-l border-line bg-surface shadow-2xl"
     >
       <header className="flex items-center gap-2 border-b border-line px-4 py-3">
-        <h2 className="text-[14px] font-semibold">Scan diagnostics</h2>
+        <h2 className="text-md font-semibold">Scan diagnostics</h2>
         <button
           type="button"
           onClick={onClose}
@@ -74,7 +74,7 @@ function DiagnosticsBody({ issues, onSelectModule }: { issues: ScanIssuesRespons
       {issues.diagnostics.length > 0 && (
         <div className="space-y-2 border-b border-line px-4 py-3">
           {issues.diagnostics.map((d) => (
-            <p key={d.code} className="text-[12px] text-muted">
+            <p key={d.code} className="text-sm text-muted">
               {d.message}
             </p>
           ))}
@@ -83,7 +83,7 @@ function DiagnosticsBody({ issues, onSelectModule }: { issues: ScanIssuesRespons
 
       <Group title="Scan errors" hint="Files that could not be parsed. Their imports are missing from the graph." count={issues.scan_errors.length} tone="danger">
         {issues.scan_errors.map((e) => (
-          <li key={`${e.path}:${e.lineno}:${e.message}`} className="font-mono text-[12px]">
+          <li key={`${e.path}:${e.lineno}:${e.message}`} className="font-mono text-sm">
             <span className="text-ink">
               {e.path}
               {e.lineno !== null && <span className="text-faint">:{e.lineno}</span>}
@@ -106,8 +106,8 @@ function DiagnosticsBody({ issues, onSelectModule }: { issues: ScanIssuesRespons
       </Group>
 
       <div className="px-4 py-3">
-        <h3 className="text-[12px] font-semibold text-ink">Limitations</h3>
-        <ul className="mt-2 list-disc space-y-1 pl-4 text-[12px] text-muted">
+        <h3 className="text-sm font-semibold text-ink">Limitations</h3>
+        <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-muted">
           {issues.limitations.map((text) => (
             <li key={text}>{text}</li>
           ))}
@@ -132,21 +132,21 @@ function Group({
 }) {
   return (
     <div className="border-b border-line px-4 py-3">
-      <h3 className="flex items-center text-[12px] font-semibold text-ink">
+      <h3 className="flex items-center text-sm font-semibold text-ink">
         {title}
-        <span className={`ml-auto font-mono text-[11px] font-normal ${count === 0 ? 'text-faint' : tone === 'danger' ? 'text-danger' : 'text-warn'}`}>
+        <span className={`ml-auto font-mono text-xs font-normal ${count === 0 ? 'text-faint' : tone === 'danger' ? 'text-danger' : 'text-warn'}`}>
           {count}
         </span>
       </h3>
-      <p className="mt-0.5 text-[11px] text-faint">{hint}</p>
-      {count === 0 ? <p className="mt-2 text-[12px] text-faint">None recorded.</p> : <ul className="mt-2 space-y-2">{children}</ul>}
+      <p className="mt-0.5 text-xs text-faint">{hint}</p>
+      {count === 0 ? <p className="mt-2 text-sm text-faint">None recorded.</p> : <ul className="mt-2 space-y-2">{children}</ul>}
     </div>
   )
 }
 
 function IssueLine({ module, lineno, raw, onSelect }: { module: string; lineno: number; raw: string; onSelect: (id: string) => void }) {
   return (
-    <li className="font-mono text-[12px]">
+    <li className="font-mono text-sm">
       <button type="button" onClick={() => onSelect(module)} className="text-accent-ink hover:underline">
         {module}
       </button>

@@ -273,10 +273,10 @@ function HoverCard({ node }: { node: ModuleNodeData }) {
     <div className="pointer-events-none absolute bottom-3 left-3 max-w-[min(360px,calc(100%-1.5rem))] animate-fade-in rounded-lg border border-line-strong bg-surface/90 px-3 py-2 shadow-(--shadow-float) backdrop-blur-md">
       <div className="flex items-center gap-2">
         <span className="size-2 shrink-0 rounded-full" style={{ background: node.color }} aria-hidden="true" />
-        <span className="truncate font-mono text-[12px] text-ink">{node.id}</span>
+        <span className="truncate font-mono text-sm text-ink">{node.id}</span>
       </div>
-      <div className="mt-0.5 truncate pl-4 font-mono text-[11px] text-faint">{node.path}</div>
-      <div className="mt-1.5 flex gap-3 pl-4 text-[11px] text-muted">
+      <div className="mt-0.5 truncate pl-4 font-mono text-xs text-faint">{node.path}</div>
+      <div className="mt-1.5 flex gap-3 pl-4 text-xs text-muted">
         <span>
           <span className="text-accent">→</span> imports {node.dependencyCount}
         </span>

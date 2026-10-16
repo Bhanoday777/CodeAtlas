@@ -10,7 +10,7 @@ export function GraphLegend({ packages, impactMode }: { packages: PackageModel; 
   const shown = packages.clusters.slice(0, MAX_PACKAGES)
 
   return (
-    <div className="absolute right-3 bottom-3 w-[250px] max-w-[calc(100%-1.5rem)] overflow-hidden rounded-lg border border-line-strong bg-surface/85 text-[11px] text-muted shadow-(--shadow-float) backdrop-blur-md">
+    <div className="absolute right-3 bottom-3 w-[250px] max-w-[calc(100%-1.5rem)] overflow-hidden rounded-lg border border-line-strong bg-surface/85 text-xs text-muted shadow-(--shadow-float) backdrop-blur-md">
       {open && (
         <div id="graph-legend" className="animate-fade-in space-y-3 border-b border-line px-3 py-2.5">
           <div className="space-y-1.5">
@@ -24,6 +24,10 @@ export function GraphLegend({ packages, impactMode }: { packages: PackageModel; 
               </span>
               <span>Larger = imported by more modules</span>
             </div>
+            <p className="text-faint">
+              Importing <span className="font-mono">a.b.c</span> also points to packages <span className="font-mono">a</span> and{' '}
+              <span className="font-mono">a.b</span>: Python runs their <span className="font-mono">__init__.py</span> first.
+            </p>
           </div>
           {impactMode ? (
             <div className="space-y-1.5">
@@ -72,7 +76,7 @@ export function GraphLegend({ packages, impactMode }: { packages: PackageModel; 
           <path d="M18 0.5 25 4l-7 3.5Z" fill="currentColor" opacity="0.6" />
         </svg>
         <span>
-          <span className="text-ink">A → B</span> means A imports B or a module in package B
+          <span className="text-ink">A → B</span> means A depends on B
         </span>
         <span className="ml-auto pl-2 text-faint">{open ? 'Hide' : 'Legend'}</span>
       </button>

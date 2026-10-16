@@ -56,10 +56,10 @@ function EmptyDetail() {
       <div className="grid size-11 place-items-center rounded-xl border border-line-strong bg-raised text-faint">
         <GraphIcon width={20} height={20} />
       </div>
-      <p className="text-[14px] font-medium">No module selected</p>
-      <p className="max-w-60 text-[12.5px] text-muted">
+      <p className="text-md font-medium">No module selected</p>
+      <p className="max-w-60 text-sm text-muted">
         Click a node in the graph, pick one from the list, or press{' '}
-        <kbd className="rounded border border-line-strong bg-raised px-1 text-[11px] text-ink">Ctrl K</kbd> to jump to a module.
+        <kbd className="rounded border border-line-strong bg-raised px-1 text-xs text-ink">Ctrl K</kbd> to jump to a module.
       </p>
     </div>
   )
@@ -80,22 +80,22 @@ function ModuleDetailBody({ module, packages, onSelect, onAnalyzeImpact }: BodyP
       <header className="border-b border-line px-4 pt-4 pb-3.5">
         <div className="flex items-center gap-2">
           <span
-            className="inline-flex max-w-full items-center gap-1.5 rounded-md border px-1.5 py-0.5 font-mono text-[11px]"
+            className="inline-flex max-w-full items-center gap-1.5 rounded-md border px-1.5 py-0.5 font-mono text-xs"
             style={{ borderColor: `${packages.colorOf(module.id)}55`, color: packages.colorOf(module.id) }}
           >
             <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
             <span className="truncate">{pkg ?? 'top level'}</span>
           </span>
-          <span className="text-[11px] text-faint">{module.is_package ? 'Package' : 'Module'}</span>
+          <span className="text-xs text-faint">{module.is_package ? 'Package' : 'Module'}</span>
         </div>
-        <h2 className="mt-2 text-[18px] leading-tight font-semibold tracking-tight break-all">{shortLabel(module.id)}</h2>
-        <p className="mt-0.5 font-mono text-[12px] break-all text-muted">{module.id}</p>
-        <p className="mt-2 flex items-center gap-1.5 font-mono text-[11.5px] break-all text-faint">
+        <h2 className="mt-2 text-xl leading-tight font-semibold tracking-tight break-all">{shortLabel(module.id)}</h2>
+        <p className="mt-0.5 font-mono text-sm break-all text-muted">{module.id}</p>
+        <p className="mt-2 flex items-center gap-1.5 font-mono text-xs break-all text-faint">
           <FileIcon className="shrink-0" width={13} height={13} />
           {module.path}
         </p>
         {module.has_scan_error && (
-          <p className="mt-3 flex gap-2 rounded-lg border border-danger/30 bg-danger/10 px-2.5 py-2 text-[12px] text-danger">
+          <p className="mt-3 flex gap-2 rounded-lg border border-danger/30 bg-danger/10 px-2.5 py-2 text-sm text-danger">
             <AlertIcon className="mt-px shrink-0" width={14} height={14} />
             <span>This file could not be parsed, so its imports are missing from the graph.</span>
           </p>
@@ -116,7 +116,7 @@ function ModuleDetailBody({ module, packages, onSelect, onAnalyzeImpact }: BodyP
           type="button"
           onClick={() => onAnalyzeImpact(module.id)}
           title="Which modules may be affected if this module changes"
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-impact/40 bg-impact/10 px-3 py-1.5 text-[12.5px] font-medium text-impact transition-colors hover:bg-impact/20"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-impact/40 bg-impact/10 px-3 py-1.5 text-sm font-medium text-impact transition-colors hover:bg-impact/20"
         >
           <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
           Analyze impact
@@ -125,7 +125,7 @@ function ModuleDetailBody({ module, packages, onSelect, onAnalyzeImpact }: BodyP
 
       <Section
         title="Imports"
-        hint="Local modules this module imports, and the packages they are in (Python runs their __init__.py first)"
+        hint="Local modules it imports, plus their parent packages"
         count={module.dependencies.length}
         icon={<ArrowRightIcon className="text-accent" width={14} height={14} />}
         empty="Imports no local modules."
@@ -135,7 +135,7 @@ function ModuleDetailBody({ module, packages, onSelect, onAnalyzeImpact }: BodyP
 
       <Section
         title="Imported by"
-        hint="Local modules that import this module, or a module inside this package, directly"
+        hint="Local modules that import it (or a module inside it)"
         count={module.dependents.length}
         icon={<ArrowLeftIcon className="text-incoming" width={14} height={14} />}
         empty="No local module imports this one."
@@ -163,8 +163,8 @@ function ModuleDetailBody({ module, packages, onSelect, onAnalyzeImpact }: BodyP
 function Stat({ label, value, className }: { label: string; value: number; className: string }) {
   return (
     <div className="flex items-baseline justify-between gap-2 rounded-lg border border-line bg-raised/60 px-2.5 py-1.5">
-      <dt className="truncate text-[11.5px] text-muted">{label}</dt>
-      <dd className={`font-mono text-[16px] leading-tight font-semibold tabular-nums ${className}`}>{value}</dd>
+      <dt className="truncate text-xs text-muted">{label}</dt>
+      <dd className={`font-mono text-lg leading-tight font-semibold tabular-nums ${className}`}>{value}</dd>
     </div>
   )
 }
@@ -182,15 +182,15 @@ interface SectionProps {
 function Section({ title, hint, count, empty, icon, tone, children }: SectionProps) {
   return (
     <div className="border-b border-line px-4 py-3 last:border-b-0">
-      <h3 className="flex items-center gap-1.5 text-[12px] font-semibold text-ink">
+      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
         {icon}
         {title}
-        <span className={`ml-auto rounded-md bg-hover px-1.5 font-mono text-[10.5px] font-normal ${tone === 'warn' ? 'text-warn' : 'text-muted'}`}>
+        <span className={`ml-auto rounded-md bg-hover px-1.5 font-mono text-2xs font-normal ${tone === 'warn' ? 'text-warn' : 'text-muted'}`}>
           {count}
         </span>
       </h3>
-      <p className="mt-0.5 text-[11px] text-faint">{hint}</p>
-      <div className="mt-2">{count === 0 ? <p className="text-[12px] text-faint italic">{empty}</p> : children}</div>
+      <p className="mt-0.5 text-xs text-faint">{hint}</p>
+      <div className="mt-2">{count === 0 ? <p className="text-sm text-faint italic">{empty}</p> : children}</div>
     </div>
   )
 }
@@ -207,8 +207,8 @@ function ModuleLinks({ ids, packages, onSelect }: { ids: string[]; packages: Pac
             className="group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-hover"
           >
             <span className="size-1.5 shrink-0 rounded-full" style={{ background: packages.colorOf(id) }} aria-hidden="true" />
-            <span className="text-[12.5px] text-ink group-hover:text-accent-ink">{shortLabel(id)}</span>
-            <span className="min-w-0 truncate font-mono text-[11px] text-faint">{id}</span>
+            <span className="text-sm text-ink group-hover:text-accent-ink">{shortLabel(id)}</span>
+            <span className="min-w-0 truncate font-mono text-xs text-faint">{id}</span>
           </button>
         </li>
       ))}
@@ -220,7 +220,7 @@ function ImportLines({ entries, tone }: { entries: ImportEntry[]; tone?: 'warn' 
   return (
     <ul className="overflow-hidden rounded-lg border border-line bg-canvas/60">
       {entries.map((entry) => (
-        <li key={`${entry.lineno}:${entry.raw}`} className="flex gap-2 border-b border-line/60 px-2 py-1 font-mono text-[11.5px] last:border-b-0">
+        <li key={`${entry.lineno}:${entry.raw}`} className="flex gap-2 border-b border-line/60 px-2 py-1 font-mono text-xs last:border-b-0">
           <span className="w-7 shrink-0 text-right text-faint select-none">{entry.lineno}</span>
           <code className={`min-w-0 break-all ${tone === 'warn' ? 'text-warn/90' : 'text-muted'}`}>{entry.raw}</code>
         </li>

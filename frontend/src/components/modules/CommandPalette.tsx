@@ -86,13 +86,13 @@ export function CommandPalette({ nodes, packages, onSelect, onAnalyzeImpact, onC
             aria-expanded="true"
             aria-controls={listId}
             aria-activedescendant={results[active] ? `${listId}-${active}` : undefined}
-            className="h-12 min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-faint focus:outline-none"
+            className="h-12 min-w-0 flex-1 bg-transparent text-md text-ink placeholder:text-faint focus:outline-none"
           />
-          <kbd className="rounded border border-line-strong bg-raised px-1.5 text-[10px] text-muted">Esc</kbd>
+          <kbd className="rounded border border-line-strong bg-raised px-1.5 text-2xs text-muted">Esc</kbd>
         </div>
 
         {results.length === 0 ? (
-          <p className="px-4 py-10 text-center text-[13px] text-muted">No modules match “{query.trim()}”.</p>
+          <p className="px-4 py-10 text-center text-base text-muted">No modules match “{query.trim()}”.</p>
         ) : (
           <ul id={listId} ref={listRef} role="listbox" aria-label="Modules" className="max-h-[50vh] overflow-y-auto p-1.5">
             {results.map((node, index) => (
@@ -108,19 +108,19 @@ export function CommandPalette({ nodes, packages, onSelect, onAnalyzeImpact, onC
               >
                 <span className="size-2 shrink-0 rounded-full" style={{ background: packages.colorOf(node.id) }} aria-hidden="true" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13.5px] text-ink">
+                  <span className="block truncate text-base text-ink">
                     <Highlight text={node.is_package ? `${shortLabel(node.id)} (package)` : shortLabel(node.id)} query={query} />
                   </span>
-                  <span className="block truncate font-mono text-[11px] text-faint">
+                  <span className="block truncate font-mono text-xs text-faint">
                     <Highlight text={node.id} query={query} />
                   </span>
                 </span>
-                {node.has_scan_error && <span className="font-mono text-[10px] text-danger">error</span>}
-                <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums" title="Imports · imported by">
+                {node.has_scan_error && <span className="font-mono text-2xs text-danger">error</span>}
+                <span className="shrink-0 font-mono text-2xs text-faint tabular-nums" title="Imports · imported by">
                   →{node.dependency_count} ←{node.dependent_count}
                 </span>
                 {index === active && (
-                  <kbd className="text-[11px] text-muted" title="Enter selects · Shift+Enter analyzes impact">
+                  <kbd className="text-xs text-muted" title="Enter selects · Shift+Enter analyzes impact">
                     ↵
                   </kbd>
                 )}
@@ -129,7 +129,7 @@ export function CommandPalette({ nodes, packages, onSelect, onAnalyzeImpact, onC
           </ul>
         )}
 
-        <div className="flex gap-4 border-t border-line px-4 py-2 text-[11px] text-faint">
+        <div className="flex gap-4 border-t border-line px-4 py-2 text-xs text-faint">
           <span>
             <kbd className="text-muted">↑↓</kbd> navigate
           </span>

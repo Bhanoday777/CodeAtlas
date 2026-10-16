@@ -30,7 +30,7 @@ export function ImpactReport({ changedId, report, focusedId, packages, onFocus, 
     <section aria-label={`Change impact of ${changedId}`} className="flex h-full min-h-0 flex-col">
       <header className="border-b border-line px-4 pt-4 pb-3.5">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-impact/40 bg-impact/10 px-1.5 py-0.5 text-[11px] font-medium text-impact">
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-impact/40 bg-impact/10 px-1.5 py-0.5 text-xs font-medium text-impact">
             <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
             Change impact
           </span>
@@ -38,19 +38,19 @@ export function ImpactReport({ changedId, report, focusedId, packages, onFocus, 
             type="button"
             onClick={onExit}
             title="Exit impact mode (Esc)"
-            className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-raised px-2 py-1 text-[12px] text-muted transition-colors hover:bg-hover hover:text-ink"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-raised px-2 py-1 text-sm text-muted transition-colors hover:bg-hover hover:text-ink"
           >
             <CloseIcon width={12} height={12} />
             Exit
-            <kbd className="text-[10px] text-faint">Esc</kbd>
+            <kbd className="text-2xs text-faint">Esc</kbd>
           </button>
         </div>
-        <h2 className="mt-2 text-[18px] leading-tight font-semibold tracking-tight break-all">
+        <h2 className="mt-2 text-xl leading-tight font-semibold tracking-tight break-all">
           If <span className="text-impact">{shortLabel(changedId)}</span> changes…
         </h2>
-        <p className="mt-0.5 font-mono text-[12px] break-all text-muted">{changedId}</p>
-        <p className="mt-2 text-[12px] text-faint">
-          These modules import it (or, for a package, a module inside it), directly or through a chain of imports, so they may be affected.
+        <p className="mt-0.5 font-mono text-sm break-all text-muted">{changedId}</p>
+        <p className="mt-2 text-sm text-faint">
+          These modules depend on it, directly or through other modules, so they may be affected.
         </p>
       </header>
 
@@ -103,8 +103,8 @@ function ReportBody({ report, focusedId, packages, onFocus, onOpenDiagnostics }:
 
       {groups.length === 0 ? (
         <div className="px-6 py-10 text-center">
-          <p className="text-[14px] font-medium">No other module is affected</p>
-          <p className="mt-1 text-[12.5px] text-muted">
+          <p className="text-md font-medium">No other module is affected</p>
+          <p className="mt-1 text-sm text-muted">
             No local module depends on <span className="font-mono text-ink">{report.changed_module}</span>, directly or indirectly.
           </p>
         </div>
@@ -113,12 +113,12 @@ function ReportBody({ report, focusedId, packages, onFocus, onOpenDiagnostics }:
           const bucket = distanceBucket(group.distance)
           return (
             <div key={group.distance} className="border-b border-line px-4 py-3 last:border-b-0">
-              <h3 className="flex items-center gap-1.5 text-[12px] font-semibold text-ink">
+              <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
                 <span className={`size-2 rounded-full ${BUCKET_DOT[bucket]}`} aria-hidden="true" />
                 Distance {group.distance}
-                <span className="ml-auto rounded-md bg-hover px-1.5 font-mono text-[10.5px] font-normal text-muted">{group.modules.length}</span>
+                <span className="ml-auto rounded-md bg-hover px-1.5 font-mono text-2xs font-normal text-muted">{group.modules.length}</span>
               </h3>
-              <p className="mt-0.5 text-[11px] text-faint">
+              <p className="mt-0.5 text-xs text-faint">
                 {group.distance === 1
                   ? 'Import the changed module directly'
                   : `Through ${group.distance - 1} intermediate module${group.distance === 2 ? '' : 's'}`}
@@ -145,7 +145,7 @@ function ReportBody({ report, focusedId, packages, onFocus, onOpenDiagnostics }:
 
 function Caveats({ report, onOpenDiagnostics }: { report: ImpactResponse; onOpenDiagnostics: () => void }) {
   return (
-    <div role="note" className="mt-3 rounded-lg border border-warn/30 bg-warn/[0.07] px-2.5 py-2 text-[12px]">
+    <div role="note" className="mt-3 rounded-lg border border-warn/30 bg-warn/[0.07] px-2.5 py-2 text-sm">
       <p className="flex items-center gap-1.5 font-medium text-warn">
         <AlertIcon className="shrink-0" width={13} height={13} />
         This list may be incomplete
@@ -155,7 +155,7 @@ function Caveats({ report, onOpenDiagnostics }: { report: ImpactResponse; onOpen
           <li key={diagnostic.code}>{diagnostic.message}</li>
         ))}
       </ul>
-      <button type="button" onClick={onOpenDiagnostics} className="mt-1.5 text-[11.5px] text-warn underline-offset-2 hover:underline">
+      <button type="button" onClick={onOpenDiagnostics} className="mt-1.5 text-xs text-warn underline-offset-2 hover:underline">
         View scan diagnostics
       </button>
     </div>
@@ -190,9 +190,9 @@ function AffectedRow({ module, bucket, focused, packages, onFocus }: AffectedRow
         className="group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-hover"
       >
         <span className="size-1.5 shrink-0 rounded-full" style={{ background: packages.colorOf(module.id) }} aria-hidden="true" />
-        <span className={`text-[12.5px] ${focused ? BUCKET_TEXT[bucket] : 'text-ink'}`}>{shortLabel(module.id)}</span>
-        <span className="min-w-0 truncate font-mono text-[11px] text-faint">{module.id}</span>
-        <span className={`ml-auto shrink-0 text-[10px] text-faint transition-transform ${focused ? 'rotate-90' : ''}`} aria-hidden="true">
+        <span className={`text-sm ${focused ? BUCKET_TEXT[bucket] : 'text-ink'}`}>{shortLabel(module.id)}</span>
+        <span className="min-w-0 truncate font-mono text-xs text-faint">{module.id}</span>
+        <span className={`ml-auto shrink-0 text-2xs text-faint transition-transform ${focused ? 'rotate-90' : ''}`} aria-hidden="true">
           ▸
         </span>
       </button>
@@ -216,7 +216,7 @@ function ExplanationPath({ id, path, packages, onFocus }: ExplanationPathProps) 
       {path.map((step, index) => (
         <li key={step}>
           {index > 0 && (
-            <span className="ml-[5px] flex items-center gap-2 border-l border-impact/40 py-0.5 pl-3 text-[10.5px] text-faint">
+            <span className="ml-[5px] flex items-center gap-2 border-l border-impact/40 py-0.5 pl-3 text-2xs text-faint">
               {stepVerb(step, packages)}
             </span>
           )}
@@ -245,7 +245,7 @@ function PathStep({ id, emphasis }: { id: string; emphasis?: 'start' | 'changed'
         className={`size-[11px] shrink-0 rounded-full border-2 ${emphasis === 'changed' ? 'border-impact bg-impact' : 'border-impact/60 bg-surface'}`}
         aria-hidden="true"
       />
-      <span className={`font-mono text-[11.5px] break-all ${emphasis ? 'text-ink' : 'text-muted'}`}>{id}</span>
+      <span className={`font-mono text-xs break-all ${emphasis ? 'text-ink' : 'text-muted'}`}>{id}</span>
     </span>
   )
 }
@@ -253,8 +253,8 @@ function PathStep({ id, emphasis }: { id: string; emphasis?: 'start' | 'changed'
 function Stat({ label, value, className }: { label: string; value: number; className: string }) {
   return (
     <div className="rounded-lg border border-line bg-raised/60 px-2.5 py-1.5">
-      <dt className="truncate text-[11px] text-muted">{label}</dt>
-      <dd className={`font-mono text-[17px] leading-tight font-semibold tabular-nums ${className}`}>{value}</dd>
+      <dt className="truncate text-xs text-muted">{label}</dt>
+      <dd className={`font-mono text-lg leading-tight font-semibold tabular-nums ${className}`}>{value}</dd>
     </div>
   )
 }

@@ -66,16 +66,16 @@ function MetricBody({ metric }: { metric: Metric }) {
   return (
     <>
       <span className="flex items-center justify-between">
-        <span className="text-[12px] text-muted">{metric.label}</span>
+        <span className="text-sm text-muted">{metric.label}</span>
         <span className={`grid size-6 place-items-center rounded-md ${iconColor}`} aria-hidden="true">
           {metric.icon}
         </span>
       </span>
       <span className="mt-1 flex items-baseline gap-2">
-        <span className={`font-mono text-[22px] leading-none font-semibold tabular-nums ${valueColor}`}>
+        <span className={`font-mono text-2xl leading-none font-semibold tabular-nums ${valueColor}`}>
           {metric.value.toLocaleString()}
         </span>
-        <span className="truncate text-[11px] text-faint">{metric.detail}</span>
+        <span className="truncate text-xs text-faint">{metric.detail}</span>
       </span>
     </>
   )
