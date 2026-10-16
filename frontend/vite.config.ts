@@ -24,5 +24,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // The persistent transform cache keeps old import.meta.glob results, so a newly
+    // added contract snapshot would be silently skipped. The suite runs in under a second.
+    fsModuleCache: false,
   },
 })

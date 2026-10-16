@@ -26,7 +26,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {info.module_id:<35} {info.path}")
 
     edges = sorted(result.local_edges())
-    print(f"\nLocal edges, A -> B means A imports B ({len(edges)}):")
+    print(f"\nLocal edges, A -> B means A depends on B ({len(edges)}):")
     for source, target in edges:
         print(f"  {source} -> {target}")
 

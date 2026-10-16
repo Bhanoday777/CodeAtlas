@@ -25,7 +25,7 @@ const CARD = 'block h-full w-full rounded-lg border border-line bg-surface px-3 
 export function SummaryStrip({ summary, packageCount, onOpenDiagnostics }: SummaryStripProps) {
   const metrics: Metric[] = [
     { label: 'Modules', value: summary.modules, detail: `${packageCount} ${packageCount === 1 ? 'package' : 'packages'}`, icon: <CubeIcon /> },
-    { label: 'Import edges', value: summary.edges, detail: 'local module imports', icon: <EdgesIcon /> },
+    { label: 'Import edges', value: summary.edges, detail: 'imports + parent packages', icon: <EdgesIcon /> },
     { label: 'External imports', value: summary.external_imports, detail: 'stdlib + third-party', icon: <ExternalIcon /> },
     { label: 'Unresolved', value: summary.unresolved_imports, detail: 'look local, no match', icon: <QuestionIcon />, tone: 'warn' },
     { label: 'Scan errors', value: summary.scan_errors, detail: 'files not parsed', icon: <XCircleIcon />, tone: 'danger' },

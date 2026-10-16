@@ -1,7 +1,10 @@
 {
   "body": {
     "dependencies": [
+      "shop",
+      "shop.models",
       "shop.models.order",
+      "shop.utils",
       "shop.utils.helpers"
     ],
     "dependents": [

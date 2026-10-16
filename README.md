@@ -326,8 +326,9 @@ by hand:
 - `sys.path` manipulation and `src/`-style layouts are not supported: the repository root is the import root.
 - `from X import name` is assumed to refer to a name defined in `X`; the name itself is not verified.
 - A local package with the same top-level name as an installed one is treated as local.
-- Importing `a.b.c` creates an edge only to `a.b.c`, not to the parent packages `a` and `a.b`
-  (whose `__init__.py` Python also executes).
+- Importing `a.b.c` also creates edges to the parent packages `a` and `a.b` that exist (Python
+  runs their `__init__.py` first). This is a conservative approximation: a change to a package's
+  `__init__.py` is reported as affecting every module that imports anything inside it.
 - `import nspkg` of a namespace package (a directory without `__init__.py`) is reported as
   unresolved, although Python accepts it. Imports of its submodules resolve correctly.
 - A package split across several folders (e.g. langgraph's `libs/*/langgraph/...`) only

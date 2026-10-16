@@ -34,7 +34,8 @@ EXPECTED_MODULES = {
 }
 
 # (importer, imported): "A imports B"
-EXPECTED_EDGES = {
+# Edges from import statements: the importer and the module the import resolves to.
+EXPECTED_IMPORT_EDGES = {
     ("manage", "shop.main"),
     ("shop.main", "shop.services.orders"),
     ("shop.main", "shop.utils.helpers"),
@@ -50,6 +51,34 @@ EXPECTED_EDGES = {
     ("shop.legacy", "shop.utils"),
     ("shop.lazy", "shop.services.pricing"),
 }
+
+# Edges to the parent packages of each imported module (Python runs their __init__.py
+# first). Only shop, shop.models, shop.services and shop.utils are packages; an importer
+# never gets an edge to itself (shop.services importing shop.services.orders).
+EXPECTED_PARENT_EDGES = {
+    ("manage", "shop"),
+    ("shop.cycle_a", "shop"),
+    ("shop.cycle_b", "shop"),
+    ("shop.dupes", "shop.utils"),
+    ("shop.dupes", "shop"),
+    ("shop.lazy", "shop.services"),
+    ("shop.lazy", "shop"),
+    ("shop.legacy", "shop"),
+    ("shop.main", "shop.services"),
+    ("shop.main", "shop.utils"),
+    ("shop.main", "shop"),
+    ("shop.models.order", "shop.utils"),
+    ("shop.models.order", "shop"),
+    ("shop.services", "shop"),
+    ("shop.services.orders", "shop.services"),
+    ("shop.services.orders", "shop.models"),
+    ("shop.services.orders", "shop"),
+    ("shop.services.pricing", "shop.models"),
+    ("shop.services.pricing", "shop.utils"),
+    ("shop.services.pricing", "shop"),
+}
+
+EXPECTED_EDGES = EXPECTED_IMPORT_EDGES | EXPECTED_PARENT_EDGES
 
 EXPECTED_EXTERNAL = {
     ("shop.main", "import os"),
@@ -93,7 +122,7 @@ def test_edge_direction_is_importer_to_imported(scan):
 def test_direct_dependencies_of_a_module(scan):
     # What shop.services.orders imports (outgoing edges).
     imported = {b for a, b in scan.local_edges() if a == "shop.services.orders"}
-    assert imported == {"shop.services.pricing", "shop.models.order"}
+    assert imported == {"shop.services.pricing", "shop.models.order", "shop.services", "shop.models", "shop"}
 
 
 def test_direct_importers_of_a_module(scan):
@@ -174,7 +203,7 @@ def test_cli_scan_report(capsys):
     assert main([str(FIXTURE_ROOT)]) == 0
     out = capsys.readouterr().out
     assert "Modules (16):" in out
-    assert "Local edges, A -> B means A imports B (14):" in out
+    assert "Local edges, A -> B means A depends on B (34):" in out
     assert "  shop/broken.py:3  SyntaxError:" in out
 
 

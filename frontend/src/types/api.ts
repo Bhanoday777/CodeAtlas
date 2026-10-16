@@ -3,7 +3,8 @@
 //
 // Conventions from the backend:
 // - Module IDs are dotted Python names ("shop.models.order").
-// - An edge {source, target} means source imports target.
+// - An edge {source, target} means source depends on target: it imports target,
+//   or a module inside package target (whose __init__.py Python runs first).
 // - Every list is sorted, so identical scans give identical responses.
 
 export interface Diagnostic {
@@ -61,9 +62,9 @@ export interface ModuleDetail {
   path: string
   is_package: boolean
   has_scan_error: boolean
-  /** Local modules this module imports. */
+  /** Local modules this module imports, and the packages those are in. */
   dependencies: string[]
-  /** Local modules that import this module. */
+  /** Local modules that import this module (or, for a package, a module inside it). */
   dependents: string[]
   external_imports: ImportEntry[]
   unresolved_imports: ImportEntry[]
@@ -93,7 +94,7 @@ export interface AffectedModule {
   id: string
   /** Number of import steps from this module to the changed module (1 = imports it directly). */
   distance: number
-  /** One shortest import chain: [id, …, changed_module]; each step imports the next. */
+  /** One shortest dependency chain: [id, …, changed_module]; each step depends on the next. */
   path: string[]
 }
 

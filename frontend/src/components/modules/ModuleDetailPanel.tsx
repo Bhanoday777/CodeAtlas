@@ -125,7 +125,7 @@ function ModuleDetailBody({ module, packages, onSelect, onAnalyzeImpact }: BodyP
 
       <Section
         title="Imports"
-        hint="Local modules this module imports"
+        hint="Local modules this module imports, and the packages they are in (Python runs their __init__.py first)"
         count={module.dependencies.length}
         icon={<ArrowRightIcon className="text-accent" width={14} height={14} />}
         empty="Imports no local modules."
@@ -135,7 +135,7 @@ function ModuleDetailBody({ module, packages, onSelect, onAnalyzeImpact }: BodyP
 
       <Section
         title="Imported by"
-        hint="Local modules that import this module directly"
+        hint="Local modules that import this module, or a module inside this package, directly"
         count={module.dependents.length}
         icon={<ArrowLeftIcon className="text-incoming" width={14} height={14} />}
         empty="No local module imports this one."

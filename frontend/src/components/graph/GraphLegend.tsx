@@ -72,7 +72,7 @@ export function GraphLegend({ packages, impactMode }: { packages: PackageModel; 
           <path d="M18 0.5 25 4l-7 3.5Z" fill="currentColor" opacity="0.6" />
         </svg>
         <span>
-          <span className="text-ink">A → B</span> means A imports B
+          <span className="text-ink">A → B</span> means A imports B or a module in package B
         </span>
         <span className="ml-auto pl-2 text-faint">{open ? 'Hide' : 'Legend'}</span>
       </button>

@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import type { RequestState } from '../../hooks/useApiRequest'
 import { errorTitle } from '../../lib/errorText'
 import { shortLabel } from '../../lib/graphElements'
-import { distanceBucket, groupByDistance, type DistanceBucket } from '../../lib/impact'
+import { distanceBucket, groupByDistance, stepVerb, type DistanceBucket } from '../../lib/impact'
 import type { PackageModel } from '../../lib/packages'
 import type { AffectedModule, ImpactResponse } from '../../types/api'
 import { AlertIcon, CloseIcon } from '../common/icons'
@@ -50,7 +50,7 @@ export function ImpactReport({ changedId, report, focusedId, packages, onFocus, 
         </h2>
         <p className="mt-0.5 font-mono text-[12px] break-all text-muted">{changedId}</p>
         <p className="mt-2 text-[12px] text-faint">
-          These modules import it, directly or through a chain of imports, so they may be affected.
+          These modules import it (or, for a package, a module inside it), directly or through a chain of imports, so they may be affected.
         </p>
       </header>
 
@@ -105,7 +105,7 @@ function ReportBody({ report, focusedId, packages, onFocus, onOpenDiagnostics }:
         <div className="px-6 py-10 text-center">
           <p className="text-[14px] font-medium">No other module is affected</p>
           <p className="mt-1 text-[12.5px] text-muted">
-            No local module imports <span className="font-mono text-ink">{report.changed_module}</span>, directly or indirectly.
+            No local module depends on <span className="font-mono text-ink">{report.changed_module}</span>, directly or indirectly.
           </p>
         </div>
       ) : (
@@ -196,20 +196,29 @@ function AffectedRow({ module, bucket, focused, packages, onFocus }: AffectedRow
           ▸
         </span>
       </button>
-      {focused && <ExplanationPath id={pathId} path={module.path} onFocus={onFocus} />}
+      {focused && <ExplanationPath id={pathId} path={module.path} packages={packages} onFocus={onFocus} />}
     </li>
   )
 }
 
-/** The import chain from the affected module down to the changed one: each step imports the next. */
-function ExplanationPath({ id, path, onFocus }: { id: string; path: string[]; onFocus: (moduleId: string | null) => void }) {
+interface ExplanationPathProps {
+  id: string
+  path: string[]
+  packages: PackageModel
+  onFocus: (moduleId: string | null) => void
+}
+
+/** The dependency chain from the affected module down to the changed one: each step depends on the next. */
+function ExplanationPath({ id, path, packages, onFocus }: ExplanationPathProps) {
   const last = path.length - 1
   return (
     <ol id={id} aria-label="Explanation path" className="animate-fade-in px-2 pt-1 pb-2">
       {path.map((step, index) => (
         <li key={step}>
           {index > 0 && (
-            <span className="ml-[5px] flex items-center gap-2 border-l border-impact/40 py-0.5 pl-3 text-[10.5px] text-faint">imports</span>
+            <span className="ml-[5px] flex items-center gap-2 border-l border-impact/40 py-0.5 pl-3 text-[10.5px] text-faint">
+              {stepVerb(step, packages)}
+            </span>
           )}
           {index === 0 || index === last ? (
             <PathStep id={step} emphasis={index === last ? 'changed' : 'start'} />

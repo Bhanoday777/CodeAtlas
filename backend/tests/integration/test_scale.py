@@ -1,7 +1,9 @@
 """A generated repository of 2,021 modules: strict correctness, generous time limits.
 
 The generator knows every import it writes, so the expected edge set is exact
-(not a sample, not an invariant): the scan must find exactly those edges. The
+(not a sample, not an invariant): the scan must find exactly those edges. Each
+import of proj.pkgXX.mYYY also depends on the packages Python runs first,
+proj.pkgXX and proj, so the generator adds those two edges itself. The
 repository has import cycles across packages, a 100-module import chain (shortened by random cross-imports), and four
 import forms (absolute `import`, absolute `from`, relative `from .` and `from ..`).
 Packages sit under one root package (`proj`), so `from ..pkgXX` stays inside it,
@@ -69,7 +71,8 @@ def generate(root: Path) -> set[tuple[str, str]]:
                     lines.append(f"from .{target_mod} import name_{rng.randrange(9)}")
                 else:
                     lines.append(f"from ..{target_pkg}.{target_mod} import name")
-                edges.add((me, target))
+                # The import, plus the parent packages whose __init__.py runs before it.
+                edges.update({(me, target), (me, f"proj.{target_pkg}"), (me, "proj")})
             (package / f"m{m:03d}.py").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return edges
 

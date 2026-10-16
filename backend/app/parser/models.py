@@ -97,13 +97,35 @@ class ScanResult:
     def local_edges(self) -> set[tuple[str, str]]:
         """Deduplicated (importer, imported) pairs between local modules.
 
-        Edge convention: (A, B) means module A imports module B.
+        Edge convention: (A, B) means module A depends on module B: A imports B,
+        or A imports something inside package B. Python runs every enclosing
+        package's __init__.py before the module itself, so `import a.b.c` gives
+        edges to a.b.c, a.b and a (those that exist as packages).
+
         Self-imports (e.g. `from . import name` inside a package's own
-        __init__.py) stay in `imports` but are not edges: a module depending
-        on itself adds nothing to impact analysis.
+        __init__.py) stay in `imports` but add no edges, not even to parent
+        packages: by the time a module runs, its own parents have already run.
         """
-        return {
-            (imp.source, imp.target)
-            for imp in self.imports
-            if imp.kind is ImportKind.LOCAL and imp.target is not None and imp.target != imp.source
-        }
+        edges: set[tuple[str, str]] = set()
+        for imp in self.imports:
+            if imp.kind is not ImportKind.LOCAL or imp.target is None or imp.target == imp.source:
+                continue
+            for target in (imp.target, *self.parent_packages(imp.target)):
+                if target != imp.source:
+                    edges.add((imp.source, target))
+        return edges
+
+    def parent_packages(self, module_id: str) -> list[str]:
+        """Enclosing packages of module_id that exist in the scan, nearest first.
+
+        "shop.models.order" -> ["shop.models", "shop"]. A namespace package (no
+        __init__.py) has no code to run and no module, so it is skipped; so is a
+        plain module that happens to share a folder's name.
+        """
+        parts = module_id.split(".")
+        parents = []
+        for end in range(len(parts) - 1, 0, -1):
+            info = self.modules.get(".".join(parts[:end]))
+            if info is not None and info.is_package:
+                parents.append(info.module_id)
+        return parents

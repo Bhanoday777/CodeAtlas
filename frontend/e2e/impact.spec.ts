@@ -102,3 +102,22 @@ test('the caveat links to the diagnostics drawer', async ({ page }) => {
   await expect(drawer).toBeHidden()
   await expect(impactReport(page, PRICING)).toBeVisible()
 })
+
+test('a package is affected through modules inside it, and its path step reads "imports from"', async ({ page }) => {
+  // Nothing imports shop.models by name; orders and pricing import shop.models.order,
+  // which runs shop/models/__init__.py first.
+  const MODELS = 'shop.models'
+  await jumpTo(page, 'models', { impact: true })
+  await expectGroups(page, MODELS, [
+    ['shop.services.orders', 'shop.services.pricing'],
+    ['shop.lazy', 'shop.main', 'shop.services'],
+    ['manage'],
+  ])
+  await distanceRows(page, MODELS, 3).first().click()
+  await expect(impactReport(page, MODELS).getByRole('list', { name: 'Explanation path' }).getByRole('listitem')).toHaveText([
+    'manage',
+    'importsshop.main',
+    'importsshop.services.orders',
+    'imports fromshop.models',
+  ])
+})

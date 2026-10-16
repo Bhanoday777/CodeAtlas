@@ -35,12 +35,14 @@ CONTRACT_DIR = Path(__file__).resolve().parents[3] / "contract" / "fixture"
 
 # Modules chosen to cover every response shape: a long impact chain (pricing, order,
 # helpers), nothing affected (manage), a file that failed to parse (broken), a cycle
-# (cycle_a), a package __init__ (shop.services), and unresolved imports (legacy).
+# (cycle_a), a package __init__ (shop.services details; shop.models impact, reached only
+# through parent-package edges), and unresolved imports (legacy).
 DETAIL_MODULES = ["manage", "shop.broken", "shop.legacy", "shop.services", "shop.services.pricing"]
 IMPACT_MODULES = [
     "manage",
     "shop.broken",
     "shop.cycle_a",
+    "shop.models",
     "shop.models.order",
     "shop.services.pricing",
     "shop.utils.helpers",

@@ -1,9 +1,14 @@
 {
   "body": {
     "dependencies": [
+      "shop",
       "shop.services.orders"
     ],
-    "dependents": [],
+    "dependents": [
+      "shop.lazy",
+      "shop.main",
+      "shop.services.orders"
+    ],
     "external_imports": [],
     "has_scan_error": false,
     "id": "shop.services",
