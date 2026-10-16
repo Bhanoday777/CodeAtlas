@@ -1,0 +1,16 @@
+{
+  "body": {
+    "dependencies": [
+      "shop.services.orders"
+    ],
+    "dependents": [],
+    "external_imports": [],
+    "has_scan_error": false,
+    "id": "shop.services",
+    "is_package": true,
+    "path": "shop/services/__init__.py",
+    "unresolved_imports": []
+  },
+  "request": "GET /api/modules/shop.services",
+  "status": 200
+}

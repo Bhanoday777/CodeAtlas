@@ -6,8 +6,9 @@ CodeAtlas statically parses a Python repository (it never executes the code), bu
 module dependency graph from local imports, and estimates which modules may be affected
 when a given module changes.
 
-> **Status: in development (Day 5 of 7).** The parser, the graph / impact engine, the HTTP
-> API, the graph explorer UI, and the change-impact UI are implemented. Integration testing is next (Day 6).
+> **Status: in development (Day 6 of 7).** The parser, the graph / impact engine, the HTTP
+> API, the graph explorer UI, and the change-impact UI are implemented and covered by unit,
+> contract, integration, and browser end-to-end tests. Delivery (Day 7) is next.
 
 ## Repository layout
 
@@ -17,13 +18,16 @@ backend/    FastAPI service (Day 3) + static import parser (Day 1) + graph engin
   app/graph/    dependency graph, BFS change-impact analysis
   app/api/      HTTP routes, response schemas, repository config
   app/main.py   FastAPI app (scans the configured repository once at startup)
-  tests/        pytest suites
+  tests/        pytest suites: parser, graph, api, contract, integration (real repos, scale)
 frontend/   React + TypeScript + Vite UI (Days 4-5): graph explorer and change-impact analysis
   src/services/   API client (the only code that calls the backend)
   src/hooks/      request state (loading / error / retry) for each endpoint
   src/lib/        pure helpers: API graph -> Cytoscape elements, module search, impact grouping
   src/components/ layout, graph (Cytoscape), module explorer and details, impact report, diagnostics
+  e2e/            Playwright browser tests against the real backend and dev server
+contract/   committed API snapshots on the fixture, checked by backend and frontend tests
 fixtures/   sample_python_project: small repo with hand-verified import relationships
+scripts/    check_all.py: every check in one command
 ```
 
 ## Setup
@@ -40,9 +44,13 @@ py -3.13 -m venv .venv            # Windows; use python3.13 on macOS/Linux
 # Frontend
 cd frontend
 npm install
-npm test          # unit tests (Vitest)
+npm test          # unit + contract tests (Vitest)
 npm run lint
 npm run build
+npm run test:e2e  # browser tests (Playwright; starts both servers, uses installed Chrome)
+
+# Everything, from the repository root, with one pass/fail summary
+backend/.venv/Scripts/python scripts/check_all.py      # --skip-e2e to leave out the browser tests
 ```
 
 To print a scan report for any Python repository (read-only; nothing is executed):
@@ -231,9 +239,86 @@ Frontend tests (`npm test`) cover the API client (success, network failure, HTTP
 bodies, ID encoding, inconsistent impact reports), the graph conversion (edge direction, cycles,
 self-loops, duplicates, package nesting, node weights, empty graph), package grouping and colors,
 search filtering and ranking, and impact grouping and highlighting (distance buckets, explanation-path
-edges, focus, cycles, empty and stale reports). The UI itself was checked by hand in Chrome against the
-fixture repository: the impact of `shop.services.pricing` and `shop.models.order` matches the API
-example above and the `python -m app.graph` CLI.
+edges, focus, cycles, empty and stale reports). The UI workflows are covered by the browser tests
+described under [Testing](#testing).
+
+## Testing
+
+| Layer | Where | What it checks |
+|---|---|---|
+| Unit (backend) | `backend/tests/parser`, `tests/graph` | Discovery, extraction, resolution, BFS impact; hand-written expected results on the fixture; independent cross-checks (importlib, forward reachability, random graphs). |
+| API | `backend/tests/api` | Every endpoint on the fixture and on small temporary repositories, error handling, repository configuration, CORS. |
+| Contract | `contract/fixture/*.json`, `backend/tests/contract`, `frontend/src/contract.test.ts` | One set of committed API snapshots, read by both sides (see below). |
+| Integration | `backend/tests/integration` | Real repositories and a 2,021-module generated repository through the scanner, the engine, and the HTTP API (see below). |
+| Unit (frontend) | `frontend/src/**/*.test.ts` | API client and response guards, graph conversion, package grouping, search, impact grouping and highlighting. |
+| End-to-end | `frontend/e2e` | Real user workflows in Chrome against the real backend (scanning the fixture) and the Vite dev server. |
+
+**Contract snapshots.** `contract/fixture/` holds the API's responses on the fixture repository: health,
+graph, scan issues, module details and impact reports for modules chosen to cover every response shape,
+and a 404. The backend test requires the API to reproduce them exactly. The frontend test runs its
+response guards, API client, graph conversion and impact highlighting on the same files and checks
+them against each other (for example, every explanation-path edge exists in the graph snapshot). A
+field renamed on either side therefore fails a test. Snapshots are deterministic: object keys are
+sorted, and list order is kept because sorted lists are part of the API contract. The only
+environment-dependent value, the wording of a Python `SyntaxError` (it differs between Python
+versions), is replaced by a placeholder. Snapshots change only on request, and the diff is reviewed:
+
+```bash
+cd backend
+.venv/Scripts/python -m pytest tests/contract --update-contract
+git diff ../contract/
+```
+
+**Real repositories.** The installed Click package (it comes with uvicorn) is copied under a
+temporary root and scanned through the API. Every endpoint is then checked for self-consistency:
+counts agree everywhere they appear, edges connect real modules, details match edges, and every
+impact report equals an independent breadth-first search over the API's own edges, with every
+path step a real edge. More repositories can be checked by path; nothing is downloaded:
+
+```bash
+CODEATLAS_REAL_REPOS="/path/to/repo1;/path/to/repo2" .venv/Scripts/python -m pytest tests/integration   # os.pathsep-separated
+```
+
+A listed path that does not exist is skipped with that reason. A test confirms the checker fails on
+a deliberately corrupted impact report.
+
+**Scale.** A generated repository (2,021 modules, 3,102 edges, cycles, four import forms) must produce
+exactly the generated edge set, and the impact of every module must equal an independent BFS. Time
+limits are deliberately generous (cold scan 180 s, warm scan 60 s, impact of every module 120 s) and
+only catch accidental blow-ups. Actual runtimes are printed at the end of every pytest run. One run on
+Windows 11 (Python 3.13):
+
+```text
+click 8.5.0             17 modules, 61 edges, largest impact 15; scan + every endpoint checked in 0.52s
+scale repository        2021 modules, 3102 edges; scan cold 8.04s / warm 0.82s; graph + impact of all 2021 modules 7.86s
+scale repository (API)  startup scan 0.50s, GET /api/graph 0.02s (2021 nodes)
+```
+
+The cold scan (first read of freshly written files) varied between 8 and 20 s across runs while the
+warm scan stayed under 1 s; the difference is the operating system's first-read cost (on Windows,
+most likely antivirus on-access scanning), not the scanner.
+
+**Browser tests.** `npm run test:e2e` starts uvicorn (pinned to the fixture even if `CODEATLAS_REPO`
+is set) and the Vite dev server, or reuses ones already running. A global setup refuses to run
+against a backend serving another repository. The specs cover the summary, list filtering, the
+Ctrl+K palette, module details and links, the diagnostics drawer, the impact workflow (counts,
+caveats, distance groups, explanation paths from the report and the module list, Esc and Exit,
+Shift+Enter, the empty result), and failure states via request interception (backend unreachable
+with Retry, a response that breaks the contract, a 404, a failed impact request with Retry). They
+use the installed Google Chrome; set `CODEATLAS_E2E_BROWSER=chromium` (after
+`npx playwright install chromium`) to use Playwright's own Chromium instead.
+
+**Manual check: graph canvas.** The graph is drawn on a canvas, so the browser tests reach modules
+through the list, the palette, and the panels. The data the canvas draws is tested separately
+(graph conversion unit tests, and the contract test on real API output). Clicking nodes is checked
+by hand:
+
+1. Click a node: it is selected in the list and the details panel; its direct imports are blue and
+   its importers teal. Clicking the empty canvas clears the selection.
+2. Hover a node: the card shows its full ID, path, and import counts.
+3. In impact mode, click an affected node: its explanation path is emphasized and expanded in the
+   report. Click it again, or click an unaffected node, to clear the focus.
+4. Drag a node, zoom with the wheel and the controls, Fit, then Reset: the layout and view are restored.
 
 ## Known limitations (static analysis)
 
@@ -265,7 +350,7 @@ example above and the `python -m app.graph` CLI.
 | 3 | FastAPI endpoints | ✅ Done: 236 passing, 1 expected failure (same known limitation) |
 | 4 | Frontend graph + search | ✅ Done: 41 frontend tests passing; backend unchanged (236 passing, 1 expected failure) |
 | 5 | Impact workflow UI | ✅ Done: 60 frontend tests passing; backend unchanged (236 passing, 1 expected failure) |
-| 6 | Integration testing | Not started |
+| 6 | Integration testing | ✅ Done: 257 backend passing, 1 skipped (no extra repos configured), 1 expected failure; 77 frontend; 15 browser e2e |
 | 7 | Docs, delivery | Not started |
 
 ## Development approach
@@ -295,6 +380,15 @@ example above and the `python -m app.graph` CLI.
   code with the BFS: forward reachability (plain DFS) on every fixture module, and shortest
   distances by repeated relaxation on 25 random graphs with cycles. Running the engine on Click
   (17 modules, 61 edges) completed without errors, and sample paths were checked against the source.
+- **Contract between backend and frontend:** both sides test against the same committed API
+  snapshots; renaming a field in a snapshot was confirmed to fail both the backend and the
+  frontend test.
+- **Real and large repositories:** every endpoint is checked for self-consistency on the installed
+  Click package, and a generated 2,021-module repository must produce exactly the generated edges,
+  with every impact report matching an independent BFS.
+- **Browser end-to-end tests:** the UI workflows run in Chrome against the real backend. They
+  replaced the manual checks of Days 4-5 and found one bug: Cytoscape ignored the `font-weight: 650`
+  used for the selected and focused module labels (it accepts multiples of 100); it is now 600.
 - **Tests that can fail:** tests were checked against deliberately broken code to confirm
   they catch the bugs they are meant to catch.
 

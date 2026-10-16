@@ -1,0 +1,7 @@
+{
+  "body": {
+    "detail": "Unknown module: 'no.such.module'"
+  },
+  "request": "GET /api/modules/no.such.module",
+  "status": 404
+}

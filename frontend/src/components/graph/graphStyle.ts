@@ -146,7 +146,7 @@ export const graphStyle: StylesheetJson = [
       'border-opacity': 1,
       'border-width': 2,
       color: palette.accentInk,
-      'font-weight': 650,
+      'font-weight': 600,
       'underlay-color': palette.accent,
       'underlay-opacity': 0.16,
       'underlay-padding': 6,
@@ -199,7 +199,7 @@ export const graphStyle: StylesheetJson = [
   },
   {
     selector: 'node.module.impact-focus',
-    style: { 'border-width': 2.5, color: palette.impactInk, 'font-weight': 650, 'z-index': 9 },
+    style: { 'border-width': 2.5, color: palette.impactInk, 'font-weight': 600, 'z-index': 9 },
   },
   {
     selector: 'node.module.impact-changed.impact-focus',

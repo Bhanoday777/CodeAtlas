@@ -1,0 +1,203 @@
+{
+  "body": {
+    "edges": [
+      {
+        "source": "manage",
+        "target": "shop.main"
+      },
+      {
+        "source": "shop.cycle_a",
+        "target": "shop.cycle_b"
+      },
+      {
+        "source": "shop.cycle_b",
+        "target": "shop.cycle_a"
+      },
+      {
+        "source": "shop.dupes",
+        "target": "shop.utils.helpers"
+      },
+      {
+        "source": "shop.lazy",
+        "target": "shop.services.pricing"
+      },
+      {
+        "source": "shop.legacy",
+        "target": "shop.utils"
+      },
+      {
+        "source": "shop.main",
+        "target": "shop.services.orders"
+      },
+      {
+        "source": "shop.main",
+        "target": "shop.utils.helpers"
+      },
+      {
+        "source": "shop.models.order",
+        "target": "shop.utils.helpers"
+      },
+      {
+        "source": "shop.services",
+        "target": "shop.services.orders"
+      },
+      {
+        "source": "shop.services.orders",
+        "target": "shop.models.order"
+      },
+      {
+        "source": "shop.services.orders",
+        "target": "shop.services.pricing"
+      },
+      {
+        "source": "shop.services.pricing",
+        "target": "shop.models.order"
+      },
+      {
+        "source": "shop.services.pricing",
+        "target": "shop.utils.helpers"
+      }
+    ],
+    "nodes": [
+      {
+        "dependency_count": 1,
+        "dependent_count": 0,
+        "has_scan_error": false,
+        "id": "manage",
+        "is_package": false,
+        "path": "manage.py"
+      },
+      {
+        "dependency_count": 0,
+        "dependent_count": 0,
+        "has_scan_error": false,
+        "id": "shop",
+        "is_package": true,
+        "path": "shop/__init__.py"
+      },
+      {
+        "dependency_count": 0,
+        "dependent_count": 0,
+        "has_scan_error": true,
+        "id": "shop.broken",
+        "is_package": false,
+        "path": "shop/broken.py"
+      },
+      {
+        "dependency_count": 1,
+        "dependent_count": 1,
+        "has_scan_error": false,
+        "id": "shop.cycle_a",
+        "is_package": false,
+        "path": "shop/cycle_a.py"
+      },
+      {
+        "dependency_count": 1,
+        "dependent_count": 1,
+        "has_scan_error": false,
+        "id": "shop.cycle_b",
+        "is_package": false,
+        "path": "shop/cycle_b.py"
+      },
+      {
+        "dependency_count": 1,
+        "dependent_count": 0,
+        "has_scan_error": false,
+        "id": "shop.dupes",
+        "is_package": false,
+        "path": "shop/dupes.py"
+      },
+      {
+        "dependency_count": 1,
+        "dependent_count": 0,
+        "has_scan_error": false,
+        "id": "shop.lazy",
+        "is_package": false,
+        "path": "shop/lazy.py"
+      },
+      {
+        "dependency_count": 1,
+        "dependent_count": 0,
+        "has_scan_error": false,
+        "id": "shop.legacy",
+        "is_package": false,
+        "path": "shop/legacy.py"
+      },
+      {
+        "dependency_count": 2,
+        "dependent_count": 1,
+        "has_scan_error": false,
+        "id": "shop.main",
+        "is_package": false,
+        "path": "shop/main.py"
+      },
+      {
+        "dependency_count": 0,
+        "dependent_count": 0,
+        "has_scan_error": false,
+        "id": "shop.models",
+        "is_package": true,
+        "path": "shop/models/__init__.py"
+      },
+      {
+        "dependency_count": 1,
+        "dependent_count": 2,
+        "has_scan_error": false,
+        "id": "shop.models.order",
+        "is_package": false,
+        "path": "shop/models/order.py"
+      },
+      {
+        "dependency_count": 1,
+        "dependent_count": 0,
+        "has_scan_error": false,
+        "id": "shop.services",
+        "is_package": true,
+        "path": "shop/services/__init__.py"
+      },
+      {
+        "dependency_count": 2,
+        "dependent_count": 2,
+        "has_scan_error": false,
+        "id": "shop.services.orders",
+        "is_package": false,
+        "path": "shop/services/orders.py"
+      },
+      {
+        "dependency_count": 2,
+        "dependent_count": 2,
+        "has_scan_error": false,
+        "id": "shop.services.pricing",
+        "is_package": false,
+        "path": "shop/services/pricing.py"
+      },
+      {
+        "dependency_count": 0,
+        "dependent_count": 1,
+        "has_scan_error": false,
+        "id": "shop.utils",
+        "is_package": true,
+        "path": "shop/utils/__init__.py"
+      },
+      {
+        "dependency_count": 0,
+        "dependent_count": 4,
+        "has_scan_error": false,
+        "id": "shop.utils.helpers",
+        "is_package": false,
+        "path": "shop/utils/helpers.py"
+      }
+    ],
+    "repository": "sample_python_project",
+    "summary": {
+      "edges": 14,
+      "external_imports": 6,
+      "modules": 16,
+      "scan_errors": 1,
+      "unresolved_imports": 3,
+      "warnings": 0
+    }
+  },
+  "request": "GET /api/graph",
+  "status": 200
+}

@@ -1,0 +1,25 @@
+{
+  "body": {
+    "dependencies": [
+      "shop.utils"
+    ],
+    "dependents": [],
+    "external_imports": [],
+    "has_scan_error": false,
+    "id": "shop.legacy",
+    "is_package": false,
+    "path": "shop/legacy.py",
+    "unresolved_imports": [
+      {
+        "lineno": 1,
+        "raw": "import shop.missing_module"
+      },
+      {
+        "lineno": 3,
+        "raw": "from .gone import thing"
+      }
+    ]
+  },
+  "request": "GET /api/modules/shop.legacy",
+  "status": 200
+}

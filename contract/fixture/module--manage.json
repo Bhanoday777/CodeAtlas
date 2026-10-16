@@ -1,0 +1,21 @@
+{
+  "body": {
+    "dependencies": [
+      "shop.main"
+    ],
+    "dependents": [],
+    "external_imports": [],
+    "has_scan_error": false,
+    "id": "manage",
+    "is_package": false,
+    "path": "manage.py",
+    "unresolved_imports": [
+      {
+        "lineno": 3,
+        "raw": "from . import settings"
+      }
+    ]
+  },
+  "request": "GET /api/modules/manage",
+  "status": 200
+}

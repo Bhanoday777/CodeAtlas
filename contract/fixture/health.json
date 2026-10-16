@@ -1,0 +1,10 @@
+{
+  "body": {
+    "edge_count": 14,
+    "module_count": 16,
+    "repository": "sample_python_project",
+    "status": "ok"
+  },
+  "request": "GET /api/health",
+  "status": 200
+}

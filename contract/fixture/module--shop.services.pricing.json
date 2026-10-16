@@ -1,0 +1,25 @@
+{
+  "body": {
+    "dependencies": [
+      "shop.models.order",
+      "shop.utils.helpers"
+    ],
+    "dependents": [
+      "shop.lazy",
+      "shop.services.orders"
+    ],
+    "external_imports": [
+      {
+        "lineno": 1,
+        "raw": "from decimal import Decimal"
+      }
+    ],
+    "has_scan_error": false,
+    "id": "shop.services.pricing",
+    "is_package": false,
+    "path": "shop/services/pricing.py",
+    "unresolved_imports": []
+  },
+  "request": "GET /api/modules/shop.services.pricing",
+  "status": 200
+}

@@ -1,0 +1,14 @@
+{
+  "body": {
+    "dependencies": [],
+    "dependents": [],
+    "external_imports": [],
+    "has_scan_error": true,
+    "id": "shop.broken",
+    "is_package": false,
+    "path": "shop/broken.py",
+    "unresolved_imports": []
+  },
+  "request": "GET /api/modules/shop.broken",
+  "status": 200
+}
