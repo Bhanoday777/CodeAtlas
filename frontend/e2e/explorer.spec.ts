@@ -2,7 +2,7 @@
 // against the running API (and match contract/fixture/*.json).
 //
 // The graph itself is a canvas: these tests reach modules through the list, the
-// palette and the panels. Clicking graph nodes is a manual check (README, Testing).
+// palette and the panels. Clicking graph nodes is a manual check (docs/ui.md, Testing the canvas).
 
 import { expect, test } from '@playwright/test'
 

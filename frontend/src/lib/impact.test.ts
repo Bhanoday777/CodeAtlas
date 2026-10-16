@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ImpactResponse } from '../types/api'
 import { distanceBucket, groupByDistance, impactHighlight, pathEdgeIds, stepVerb } from './impact'
 
-// The README's example: GET /api/impact/shop.services.pricing on the fixture.
+// GET /api/impact/shop.services.pricing on the fixture (contract/fixture/impact--shop.services.pricing.json).
 const PRICING: ImpactResponse = {
   changed_module: 'shop.services.pricing',
   affected: [

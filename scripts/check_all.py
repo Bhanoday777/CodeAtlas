@@ -9,7 +9,7 @@ Every step runs even if an earlier one fails, so one run shows all failures.
 Exit status is non-zero if any step failed.
 
 Requirements: backend/.venv with backend/requirements.txt installed, and
-`npm install` in frontend/ (see README, Setup).
+`npm install` in frontend/ (see README, Quick start).
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ def venv_python() -> str:
     for candidate in (BACKEND / ".venv" / "Scripts" / "python.exe", BACKEND / ".venv" / "bin" / "python"):
         if candidate.exists():
             return str(candidate)
-    sys.exit("backend/.venv not found: create it and install backend/requirements.txt first (README, Setup).")
+    sys.exit("backend/.venv not found: create it and install backend/requirements.txt first (README, Quick start).")
 
 
 def npm() -> str:
