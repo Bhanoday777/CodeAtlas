@@ -84,8 +84,8 @@ export function ModuleExplorer({ nodes, packages, selectedId, onSelect }: Module
           />
         </label>
         <p className="mt-2 flex justify-between text-xs text-faint" aria-live="polite">
-          <span>{searching ? `${matches.length} of ${nodes.length} match` : `${nodes.length} modules`}</span>
-          <span>{packages.clusters.length} packages</span>
+          <span>{searching ? `${matches.length} of ${nodes.length} match` : count(nodes.length, 'module')}</span>
+          <span>{count(packages.clusters.length, 'package')}</span>
         </p>
         {matches.length > MAX_ROWS && (
           <p className="mt-1 text-xs text-warn">Showing the first {MAX_ROWS}. Refine the filter.</p>
@@ -138,6 +138,10 @@ export function ModuleExplorer({ nodes, packages, selectedId, onSelect }: Module
       )}
     </section>
   )
+}
+
+function count(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`
 }
 
 interface ModuleRowProps {
